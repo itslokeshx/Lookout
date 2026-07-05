@@ -1533,6 +1533,7 @@ dependencies = [
     { name = "requests" },
     { name = "resend" },
     { name = "rich" },
+    { name = "sib-api-v3-sdk" },
     { name = "typing-extensions" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1559,6 +1560,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.4" },
     { name = "resend", specifier = ">=2.13.0" },
     { name = "rich", specifier = ">=14.1.0" },
+    { name = "sib-api-v3-sdk", specifier = ">=7.6.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.35.0" },
 ]
@@ -2880,6 +2882,18 @@ sdist = { url = "https://files.pythonhosted.org/packages/c5/f0/184b4b5f8d00f2a92
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1c/78/504fdd027da3b84ff1aecd9f6957e65f35134534ccc6da8628eb71e76d3f/send2trash-2.1.0-py3-none-any.whl", hash = "sha256:0da2f112e6d6bb22de6aa6daa7e144831a4febf2a87261451c4ad849fe9a873c", size = 17610, upload-time = "2026-01-14T06:27:35.218Z" },
 ]
+
+[[package]]
+name = "sib-api-v3-sdk"
+version = "7.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "python-dateutil" },
+    { name = "six" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/23/e6/44b6ca7c63cc72e5baf0b9a570e115913fb96e9f97201c2195b8bf4f5d71/sib-api-v3-sdk-7.6.0.tar.gz", hash = "sha256:8975108c4a66ca2280532017190150f98ac826eacdda6c2f859ff104d2828266", size = 265002, upload-time = "2023-03-20T06:21:08.403Z" }
 
 [[package]]
 name = "six"
