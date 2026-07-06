@@ -30,15 +30,14 @@ def run_dispatch(user_prompt: str):
         user["rank"] = i + 1
 
     template = generate_template(matched_users, user_prompt)
-    preview = renderTemplate(template, matched_users[0])
 
-    print(f"Matched {len(matched_users)} users.")
-    print(f"\nSubject: {preview.subject}\n\n{preview.body}")
+    print(f"Matched {len(matched_users)} users.\n")
+    print(f"Subject: {template.subject_template}\n\n{template.body_template}")
     print(f"\nRecipients:")
     for user in matched_users:
         print(f"  {user['rank']}. {user['name']} ({user['email']})")
     print()
-    choice = input("Approve this template for all matched users? (y/n): ").strip().lower()
+    choice = input("Approve? (y/n): ").strip().lower()
 
     if choice != "y":
         print("Aborted.")

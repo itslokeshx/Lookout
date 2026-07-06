@@ -27,6 +27,10 @@ env.bak/
 venv.bak/
 .ipynb_checkpoints/
 
+# Jupyter Notebooks
+Look_Agent.ipynb
+Lookout_Agent_Learning.ipynb
+
 # Environment files
 .env
 .env.local

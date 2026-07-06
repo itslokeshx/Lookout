@@ -6,7 +6,6 @@ from tools import find_users
 
 llm_gpt = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
 
-# ── finder_agent has ONLY find_users — sendMail is deliberately excluded ──
 finder_agent = create_agent(
     model=llm_gpt,
     tools=[find_users],
