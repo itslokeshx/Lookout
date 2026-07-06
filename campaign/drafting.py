@@ -1,5 +1,5 @@
-from models import EmailTemplate, EmailDraft
-from agent import llm_gpt
+from campaign.models import EmailTemplate, EmailDraft
+from agent.core import llm_gpt
 
 template_llm = llm_gpt.with_structured_output(EmailTemplate)
 
@@ -18,6 +18,7 @@ Available placeholders (use ONLY these, nothing else):
 Write ONE email template using only the placeholders listed above.
 Sign off as "The SoulSync Team". Keep body under 100 words.
 Use at most 4 emojis total across subject and body.
+You must also explain your reasoning for the template in the 'reason' field.
 """
     return template_llm.invoke(prompt)
 

@@ -38,8 +38,8 @@ No SQL. No template editor. Just intent.
            │                         │
            ▼                         ▼
 ┌──────────────────┐      ┌──────────────────────────┐
-│   finder_agent   │      │      drafting.py          │
-│  (LangGraph)     │      │  generate_template()      │
+│     agent/       │      │       campaign/          │
+│   (LangGraph)    │      │  generate_template()      │
 │                  │      │  renderTemplate()         │
 │  ┌────────────┐  │      │  to_html()                │
 │  │ find_users │  │      └──────────────────────────┘
@@ -49,7 +49,7 @@ No SQL. No template editor. Just intent.
          │
          ▼
 ┌──────────────────┐      ┌──────────────────────────┐
-│    MongoDB       │      │        Brevo              │
+│      db/         │      │        Brevo              │
 │  users collection│      │  transactional email      │
 └──────────────────┘      └──────────────────────────┘
 ```
@@ -72,13 +72,21 @@ No SQL. No template editor. Just intent.
 ```
 lookout/
 ├── app.py          entrypoint — runs the full dispatch loop
-├── agent.py        finder agent with find_users tool binding
-├── tools.py        find_users (MongoDB) and sendMail (Brevo)
-├── drafting.py     template generation, rendering, HTML wrapping
-├── db.py           MongoDB client + collection reference
-├── models.py       Pydantic schemas — EmailTemplate, EmailDraft, DispatchedResult
 ├── config.py       env config and constants
-└── ui.py           CLI — gradient banner, spinner, layout, colors
+├── agent/          agent modules
+│   ├── __init__.py
+│   ├── core.py     finder agent with find_users tool binding
+│   └── tools.py    find_users (MongoDB) and sendMail (Brevo) tools
+├── campaign/       campaign processing
+│   ├── __init__.py
+│   ├── models.py   Pydantic schemas — EmailTemplate, EmailDraft, DispatchedResult
+│   └── drafting.py template generation, rendering, HTML wrapping
+├── db/             database access
+│   ├── __init__.py
+│   └── client.py   MongoDB client + collection reference
+└── ui/             cli interface
+    ├── __init__.py
+    └── cli.py      CLI — gradient banner, spinner, layout, colors
 ```
 
 ---

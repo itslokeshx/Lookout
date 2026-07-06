@@ -2,7 +2,7 @@ from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 
 from config import GROQ_API_KEY
-from tools import find_users
+from agent.tools import find_users
 
 llm_gpt = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
 

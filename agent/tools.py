@@ -1,15 +1,16 @@
+import json
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from langchain_core.tools import tool
 
 from config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
-from db import users_collection
+from db.client import users_collection
 
 
 @tool
 def find_users(
-    filters: dict = None,
-    sort_by: str = None,
+    filters: dict | None = None,
+    sort_by: str | None = None,
     ascending: bool = False,
     limit: int = 5,
 ):
@@ -52,7 +53,7 @@ def find_users(
             for k, v in user.items()
         }
 
-    return [serialize(u) for u in targeted_users]
+    return json.dumps([serialize(u) for u in targeted_users])
 
 
 @tool
