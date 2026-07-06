@@ -2,9 +2,9 @@
 
 # 🔭 LOOKOUT
 
-### AI Campaign Dispatch Engine
+### AI-Agentic Email Campaign Dispatch Engine
 
-*Describe who to email. Let the agent handle the rest.*
+*State your campaign goals in plain English. Let the discovery and drafting agents do the work.*
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-Agent-green?style=flat-square)
@@ -16,24 +16,26 @@
 
 ---
 
-## What is Lookout?
+## 🚀 Overview
 
-Lookout is an agentic email dispatch system built for SoulSync. You describe your audience in plain English — the agent reasons about who to target, queries the database, generates a personalized email, and dispatches it on your approval.
+**Lookout** is a conversational email dispatch orchestrator built for the **SoulSync** streaming platform. Using conversational inputs, it automates the entire marketing lifecycle: user targeting, content personalization, review previews, and SMTP delivery.
 
-No SQL. No template editor. Just intent.
+Instead of writing SQL queries, building custom MongoDB aggregation pipelines, or designing HTML emails, you describe your target audience and intent directly in natural language:
 
-```
-▸ target: top 3 users by listening time
+```text
+▸ enter the target users: mail to the users 3 their names is alice,bob,charlie as welcome to soulsync
 ```
 
 ---
 
-## Architecture
+## 🛠️ Architecture
+
+Lookout is built with a highly modular architecture that keeps agent brains, campaign drafting, database drivers, and UI interactions separate:
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │                      app.py                         │
-│                  orchestrator                       │
+│                  (Orchestrator)                     │
 └──────────┬─────────────────────────┬────────────────┘
            │                         │
            ▼                         ▼
@@ -49,114 +51,151 @@ No SQL. No template editor. Just intent.
          │
          ▼
 ┌──────────────────┐      ┌──────────────────────────┐
-│      db/         │      │        Brevo              │
-│  users collection│      │  transactional email      │
+│      db/         │      │        Brevo             │
+│  (MongoDB Atlas) │      │  (Transactional API)     │
 └──────────────────┘      └──────────────────────────┘
 ```
 
 ---
 
-## Agent flow
+## 🤖 How the Agents Work
 
-1. **Intent parsing** — You describe your target in natural language. The agent infers `filters`, `sort_by`, `ascending`, and `limit` from your prompt.
-2. **User discovery** — The `find_users` tool queries MongoDB with those parameters and returns serialized user records.
-3. **Template generation** — A structured-output LLM generates a subject and body template using only the fields that actually exist on the matched users.
-4. **Rendered preview** — The template is filled with real data from the first matched user. You see exactly what the email will look like — no `{placeholder}` text.
-5. **Approval gate** — Dispatch waits for your confirmation before sending anything.
-6. **HTML dispatch** — Each user gets their own rendered email, wrapped in a branded HTML layout and sent via Brevo.
+1. **Natural Language Discovery**: The user's prompt is processed by the **Discovery Agent** (`agent/core.py`). It dynamically infers filters, sorting rules, ascending/descending order, and query limit bounds.
+2. **Intelligent Query Transformation**: The `find_users` tool evaluates filters case-insensitively using Python's pre-compiled BSON regex representations, allowing partial matches (e.g. searching for `selvi` matches `Porselvi A` and querying lists of names uses regex alternation patterns).
+3. **Structured Template Generation**: The **Drafting Agent** generates an email template (`EmailTemplate`) with strict Pydantic formatting. The subject line and HTML body are tailored with dynamic placeholders (e.g., `{name}`, `{totalListeningTime}`) based *only* on fields available in the matched user records.
+4. **Rich Terminal Visualizer**: Before sending any emails, the orchestrator renders a complete markdown-styled preview in your terminal showing the first recipient's fully compiled message alongside a recipient list.
+5. **Approval Gate & Dispatch Loop**: The orchestrator asks for human validation before sending. If approved, individual HTML emails are rendered and dispatched via Brevo. Afterwards, you are prompted to start another search or exit.
 
 ---
 
-## Project structure
+## 📂 Project Directory Structure
 
-```
+```text
 lookout/
-├── app.py          entrypoint — runs the full dispatch loop
-├── config.py       env config and constants
-├── agent/          agent modules
+├── app.py          # Application entrypoint - manages execution and prompt-input loops
+├── config.py       # Configuration loader - reads dotenv and configures constants
+├── agent/          # Agent core definitions
 │   ├── __init__.py
-│   ├── core.py     finder agent with find_users tool binding
-│   └── tools.py    find_users (MongoDB) and sendMail (Brevo) tools
-├── campaign/       campaign processing
+│   ├── core.py     # Initializer for LangChain agent and system directives
+│   └── tools.py    # Discovery tool (MongoDB) and Sender tool (Brevo Transactional API)
+├── campaign/       # Email campaign components
 │   ├── __init__.py
-│   ├── models.py   Pydantic schemas — EmailTemplate, EmailDraft, DispatchedResult
-│   └── drafting.py template generation, rendering, HTML wrapping
-├── db/             database access
+│   ├── models.py   # Pydantic schemas (EmailTemplate, EmailDraft, DispatchedResult)
+│   └── drafting.py # Template generation LLM call, rendering, HTML wrapper layout
+├── db/             # Database connectivity
 │   ├── __init__.py
-│   └── client.py   MongoDB client + collection reference
-└── ui/             cli interface
+│   └── client.py   # PyMongo client instantiator
+└── ui/             # Graphical text elements
     ├── __init__.py
-    └── cli.py      CLI — gradient banner, spinner, layout, colors
+    └── cli.py      # Terminal decorations: spinners, layouts, color formatting
 ```
 
 ---
 
-## Stack
+## 💻 Tech Stack
 
-| Component | Technology |
-|---|---|
-| Agent framework | LangChain + LangGraph |
-| LLM | Groq — `openai/gpt-oss-120b` |
-| Structured output | Pydantic v2 |
-| Database | MongoDB via PyMongo |
-| Email delivery | Brevo Transactional API |
-| Environment | python-dotenv |
+- **Agent Engine**: LangChain
+- **LLM**: Groq (`openai/gpt-oss-120b`)
+- **Validation**: Pydantic v2
+- **Database**: MongoDB Atlas via PyMongo
+- **Delivery System**: Brevo API (sib-api-v3-sdk)
+- **Styling**: Vanilla Python Terminal ESC Color Codes
 
 ---
 
-## Setup
+## ⚙️ Setup and Installation
 
+### 1. Clone the repository
 ```bash
 git clone https://github.com/itslokeshx/Lookout.git
 cd Lookout
+```
 
+### 2. Configure the virtual environment
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-
 pip install -r requirements.txt
 ```
 
-Create a `.env` file:
-
+### 3. Set environment variables
+Copy the template configuration file:
+```bash
+cp .env.example .env
+```
+And populate it with your active API keys:
 ```env
-GROQ_API_KEY=your_groq_api_key
-BREVO_API_KEY=your_brevo_api_key
-MONGODB_URI=your_mongodb_connection_string
+CEREBRAS_API_KEY=csk-your-cerebras-key
+GROQ_API_KEY=gsk_your_groq_key
+BREVO_API_KEY=xkeysib-your_brevo_key
+MONGODB_URI=mongodb+srv://your_connection_string
 ```
 
-Run:
+---
 
+## 🏃 Running Lookout
+
+Run the orchestrator:
 ```bash
 python3 app.py
 ```
 
+### Prompt Examples
+- `mail to the users 3 their names is alice,bob,charlie as welcome to soulsync`
+- `send reengagement mail to the user john as to make him engage again`
+- `top 5 users by listening time`
+- `newest signups who haven't listened to any tracks`
+
+### Interactive CLI Controls
+```text
+  ▸ enter the target users: mail to the users 3 their names is alice,bob,charlie as welcome to soulsync
+  ▰▰▱ Searching for users...
+  ▰▰▰ Generating template...
+  
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ▎ PREVIEW
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⦿ Welcome to SoulSync, Alice! 🎉
+     Hi Alice,
+     Your account is ready! We're excited to welcome you...
+  
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ▎ TARGETS  3
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   1  Alice  alice@example.com ◂ preview
+   2  Bob  bob@example.com
+   3  Charlie  charlie@example.com
+  
+  ────────────────────────────────────────────────────────────────────
+  ▸ dispatch? y/n y
+  
+  ▸ alice@example.com  id: <smtp-id-1>
+  ▸ bob@example.com  id: <smtp-id-2>
+  ▸ charlie@example.com  id: <smtp-id-3>
+  
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3 sent  ━  24.49s
+  
+  ────────────────────────────────────────────────────────────────────
+  ▸ mail again or exit? m/e e
+```
+
 ---
 
-## Usage examples
+## 📊 Database Schema Fields
 
-```
-▸ target: top 5 users by listening time
-▸ target: users who joined in the last 7 days
-▸ target: least active users this month
-▸ target: top 10 listeners and send them an exclusive offer
-```
-
----
-
-## Available query fields
-
-The agent can filter and sort on any of these:
+The agent is trained to filter, rank, and query users dynamically utilizing these document schema fields:
 
 | Field | Type | Description |
 |---|---|---|
-| `name` | string | Display name |
-| `email` | string | Email address |
-| `totalListeningTime` | number | Total seconds listened |
-| `createdAt` | date | Account creation date |
-| `updatedAt` | date | Last active date |
+| `name` | String | User's full display name |
+| `email` | String | User's email address |
+| `totalListeningTime` | Number (seconds) | Total streaming duration |
+| `createdAt` | ISO DateTime | Account creation timestamp |
+| `updatedAt` | ISO DateTime | Last active session timestamp |
 
 ---
 
-## License
+## 📄 License
 
-MIT — see [LICENSE](LICENSE)
+Lookout is open-source software licensed under the [MIT License](LICENSE).
