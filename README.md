@@ -32,26 +32,88 @@ The new **Lookout Dashboard** provides a beautiful, dark-themed React UI to mana
 
 ## 🛠️ Architecture
 
-Lookout is built with a clean, decoupled architecture:
+Lookout is built with a highly decoupled structure, cleanly separating the user interface, API endpoints, AI intelligence, and external integrations.
+
+### System Architecture
 
 ```mermaid
 graph TD
-    UI[React Frontend UI] <--> API[FastAPI Backend]
-    CLI[Terminal CLI] <--> Agent[Agent Core]
-    API <--> Agent
-    
-    subgraph Agent Core
-        AgentBrain[LangChain Agent]
-        Drafting[LLM Template Generator]
+    subgraph Client Layer
+        UI[React Dashboard<br>Vite + Tailwind v4]
+        CLI[Terminal UI<br>agent/cli.py]
     end
     
-    AgentBrain <--> DB[(MongoDB Atlas)]
-    AgentBrain --> Email[Brevo Transactional API]
+    subgraph API Layer
+        FastAPI[FastAPI Server<br>backend/server.py]
+    end
+
+    subgraph Agent Core
+        Agent[LangChain Agent<br>agent/core.py]
+        Campaign[Drafting Engine<br>agent/campaign/]
+    end
+
+    subgraph External Integrations
+        MongoDB[(MongoDB Atlas<br>SoulSync Users)]
+        Brevo[Brevo API<br>SMTP Email Dispatch]
+        Groq[Groq API<br>LLM Reasoning]
+    end
+
+    UI <-->|REST / JSON| FastAPI
+    CLI <--> Agent
+    FastAPI <--> Agent
+    
+    Agent <--> Groq
+    Agent <--> MongoDB
+    Campaign <--> Groq
+    Agent -->|Dispatch| Brevo
 ```
 
-1. **Natural Language Discovery**: The user's prompt is processed by the **Discovery Agent** (`agent/core.py`). It dynamically infers filters, sorting rules, and query limits.
-2. **Structured Template Generation**: The **Drafting Agent** generates an email template (`EmailTemplate`) with strict Pydantic formatting. The subject line and HTML body are tailored with dynamic placeholders based *only* on fields available in the matched records.
-3. **Approval Gate & Dispatch Loop**: The UI (or CLI) renders a complete markdown-styled preview before sending. Once human validation is given, individual HTML emails are rendered and dispatched via Brevo.
+### Execution Flow
+
+The core lifecycle from a natural language prompt to dispatched emails:
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as Dashboard / CLI
+    participant Agent as LangChain Agent
+    participant DB as MongoDB
+    participant LLM as Groq LLM
+    participant Brevo as Brevo API
+
+    User->>App: "mail active users to welcome them"
+    App->>Agent: Submit Prompt
+    
+    rect rgb(30, 30, 30)
+        Note right of Agent: Phase 1: Discovery
+        Agent->>LLM: Parse intent (filters, sort, limit)
+        LLM-->>Agent: Structured Search Parameters
+        Agent->>DB: Execute Query (find_users tool)
+        DB-->>Agent: Matched Users JSON
+    end
+    
+    rect rgb(30, 30, 30)
+        Note right of Agent: Phase 2: Drafting
+        Agent->>LLM: Request EmailTemplate (Subject, Body)
+        LLM-->>Agent: Pydantic Schema + Reasoning
+        Agent-->>App: Return Markdown Preview & User List
+    end
+    
+    User->>App: Approves Dispatch
+    App->>Agent: Confirm Send
+    
+    rect rgb(30, 30, 30)
+        Note right of Agent: Phase 3: Dispatch
+        loop For Each User
+            Agent->>Agent: Render dynamic {placeholders}
+            Agent->>Brevo: Send Transactional Email
+            Brevo-->>Agent: Message ID / Error
+            Agent-->>App: Stream Send Status
+        end
+    end
+    
+    App-->>User: Display Summary (Sent, Failed, Time)
+```
 
 ---
 
