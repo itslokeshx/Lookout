@@ -113,9 +113,8 @@ cd Lookout
 
 ### 2. Configure the virtual environment
 ```bash
-python3 -m venv .venv
+uv sync
 source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
 ### 3. Set environment variables
