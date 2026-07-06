@@ -4,13 +4,12 @@ import threading
 import shutil
 
 
-PURPLE = "\033[38;5;141m"
-CYAN = "\033[38;5;117m"
-GREEN = "\033[38;5;114m"
-RED = "\033[38;5;204m"
-YELLOW = "\033[38;5;222m"
+ICE = "\033[38;5;75m"
+PEACH = "\033[38;5;216m"
+MINT = "\033[38;5;84m"
+ROSE = "\033[38;5;197m"
 WHITE = "\033[38;5;255m"
-DIM = "\033[38;5;245m"
+STEEL = "\033[38;5;240m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
@@ -19,7 +18,7 @@ def width():
     return min(shutil.get_terminal_size().columns, 72)
 
 
-def line(char="─", color=DIM):
+def line(char="─", color=STEEL):
     print(f"{color}{char * width()}{RESET}")
 
 
@@ -34,8 +33,8 @@ def banner():
     ]
     print()
     for row in art:
-        print(f"  {PURPLE}{row}{RESET}")
-    print(f"  {DIM}{'Campaign Dispatch Engine':^62}{RESET}")
+        print(f"  {ICE}{row}{RESET}")
+    print(f"  {STEEL}{'Campaign Dispatch Engine':^62}{RESET}")
     print()
 
 
@@ -43,7 +42,7 @@ def spinner(message, stop_event):
     frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
     i = 0
     while not stop_event.is_set():
-        sys.stdout.write(f"\r  {CYAN}{frames[i % len(frames)]}{RESET} {DIM}{message}{RESET}")
+        sys.stdout.write(f"\r  {PEACH}{frames[i % len(frames)]}{RESET} {STEEL}{message}{RESET}")
         sys.stdout.flush()
         i += 1
         time.sleep(0.08)
@@ -69,70 +68,70 @@ class Spinner:
 
 def show_template(preview):
     w = width()
-    print(f"  {BOLD}{PURPLE}╭{'─' * (w - 4)}╮{RESET}")
-    print(f"  {PURPLE}│{RESET} {YELLOW}EXAMPLE PREVIEW{' ' * (w - 21)}{PURPLE}│{RESET}")
-    print(f"  {PURPLE}├{'─' * (w - 4)}┤{RESET}")
+    print(f"  {BOLD}{ICE}╭{'─' * (w - 4)}╮{RESET}")
+    print(f"  {ICE}│{RESET} {PEACH}EXAMPLE PREVIEW{' ' * (w - 21)}{ICE}│{RESET}")
+    print(f"  {ICE}├{'─' * (w - 4)}┤{RESET}")
 
-    print(f"  {PURPLE}│{RESET} {DIM}Subject:{RESET} {WHITE}{preview.subject}{RESET}")
-    print(f"  {PURPLE}│{RESET}")
+    print(f"  {ICE}│{RESET} {STEEL}Subject:{RESET} {WHITE}{preview.subject}{RESET}")
+    print(f"  {ICE}│{RESET}")
 
     for body_line in preview.body.split("\n"):
-        print(f"  {PURPLE}│{RESET}  {WHITE}{body_line}{RESET}")
+        print(f"  {ICE}│{RESET}  {WHITE}{body_line}{RESET}")
 
-    print(f"  {PURPLE}╰{'─' * (w - 4)}╯{RESET}")
+    print(f"  {ICE}╰{'─' * (w - 4)}╯{RESET}")
     print()
 
 
 def show_recipients(matched_users):
     count = len(matched_users)
-    print(f"  {CYAN}◆{RESET} {BOLD}{WHITE}{count} recipient{'s' if count != 1 else ''} matched{RESET}\n")
+    print(f"  {ICE}◆{RESET} {BOLD}{WHITE}{count} recipient{'s' if count != 1 else ''} matched{RESET}\n")
 
     for user in matched_users:
         rank = str(user["rank"]).rjust(2)
-        tag = f"  {CYAN}← preview{RESET}" if user["rank"] == 1 else ""
-        print(f"    {DIM}{rank}.{RESET} {WHITE}{user['name']}{RESET}  {DIM}‹{user['email']}›{RESET}{tag}")
+        tag = f"  {PEACH}← preview{RESET}" if user["rank"] == 1 else ""
+        print(f"    {STEEL}{rank}.{RESET} {WHITE}{user['name']}{RESET}  {STEEL}‹{user['email']}›{RESET}{tag}")
 
     print()
 
 
 def ask_approval():
-    line(color=DIM)
-    choice = input(f"  {YELLOW}{BOLD}↳ Approve dispatch? {RESET}{DIM}[y/n]{RESET} ").strip().lower()
+    line(color=STEEL)
+    choice = input(f"  {PEACH}{BOLD}↳ Approve dispatch? {RESET}{STEEL}[y/n]{RESET} ").strip().lower()
     print()
     return choice == "y"
 
 
 def show_send_result(receiver, success, detail=""):
     if success:
-        print(f"    {GREEN}✓{RESET} {WHITE}{receiver}{RESET}  {DIM}{detail}{RESET}")
+        print(f"    {MINT}✓{RESET} {WHITE}{receiver}{RESET}  {STEEL}{detail}{RESET}")
     else:
-        print(f"    {RED}✗{RESET} {WHITE}{receiver}{RESET}  {DIM}{detail}{RESET}")
+        print(f"    {ROSE}✗{RESET} {WHITE}{receiver}{RESET}  {STEEL}{detail}{RESET}")
 
 
 def show_aborted():
-    print(f"  {RED}■{RESET} {DIM}Dispatch cancelled.{RESET}\n")
+    print(f"  {ROSE}■{RESET} {STEEL}Dispatch cancelled.{RESET}\n")
 
 
 def show_no_match():
-    print(f"\n  {RED}■{RESET} {DIM}No users matched the query.{RESET}\n")
+    print(f"\n  {ROSE}■{RESET} {STEEL}No users matched the query.{RESET}\n")
 
 
 def show_summary(result):
-    line(color=DIM)
+    line(color=STEEL)
     print()
     parts = []
     if result.sent:
-        parts.append(f"{GREEN}▲ {result.sent} sent{RESET}")
+        parts.append(f"{MINT}▲ {result.sent} sent{RESET}")
     if result.failed:
-        parts.append(f"{RED}▼ {result.failed} failed{RESET}")
+        parts.append(f"{ROSE}▼ {result.failed} failed{RESET}")
     if result.rejected:
-        parts.append(f"{YELLOW}● {result.rejected} rejected{RESET}")
-    parts.append(f"{DIM}⏱ {result.duration}s{RESET}")
+        parts.append(f"{PEACH}● {result.rejected} rejected{RESET}")
+    parts.append(f"{STEEL}⏱ {result.duration}s{RESET}")
 
     print(f"  {('  │  '.join(parts))}")
     print()
 
 
 def prompt_input():
-    line(color=DIM)
-    return input(f"  {PURPLE}▸{RESET} {BOLD}{WHITE}Describe who to email:{RESET} ").strip()
+    line(color=STEEL)
+    return input(f"  {ICE}▸{RESET} {BOLD}{WHITE}Describe who to email:{RESET} ").strip()
