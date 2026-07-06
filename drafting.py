@@ -17,6 +17,7 @@ Available placeholders (use ONLY these, nothing else):
 
 Write ONE email template using only the placeholders listed above.
 Sign off as "The SoulSync Team". Keep body under 100 words.
+Use at most 4 emojis total across subject and body.
 """
     return template_llm.invoke(prompt)
 
@@ -61,7 +62,7 @@ def to_html(draft: EmailDraft) -> str:
 
 <tr>
 <td style="padding:32px 40px 24px;border-bottom:1px solid #e5e7eb;">
-<span style="font-size:20px;font-weight:700;color:#1db954;">SoulSync</span>
+<span style="font-size:20px;font-weight:700;color:#1db954;">🎵 SoulSync</span>
 </td>
 </tr>
 
