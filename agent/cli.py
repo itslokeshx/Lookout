@@ -3,9 +3,9 @@ import time
 from langchain_core.messages import HumanMessage
 
 from agent import finder_agent, sendMail, get_tool_result
-from campaign import DispatchedResult, generate_template, renderTemplate, to_html
-from ui import Spinner, banner, show_template, show_recipients, ask_approval
-from ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input, ask_loop
+from agent.campaign import DispatchedResult, generate_template, renderTemplate, to_html
+from agent.ui import Spinner, banner, show_template, show_recipients, ask_approval
+from agent.ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input, ask_loop
 
 
 def run_dispatch(user_prompt: str):

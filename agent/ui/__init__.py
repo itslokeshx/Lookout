@@ -1,4 +1,4 @@
-from ui.cli import (
+from agent.ui.cli import (
     Spinner,
     banner,
     show_template,

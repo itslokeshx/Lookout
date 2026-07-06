@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from langchain_core.messages import ToolMessage
 
-from config import GROQ_API_KEY
+from agent.config import GROQ_API_KEY
 from agent.tools import find_users
 
 

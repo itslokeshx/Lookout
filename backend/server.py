@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
 
 from agent import finder_agent, sendMail, get_tool_result
-from campaign import generate_template, renderTemplate, to_html
+from agent.campaign import generate_template, renderTemplate, to_html
 
 app = FastAPI(title="Lookout API", version="0.1.0")
 

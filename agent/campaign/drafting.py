@@ -1,4 +1,4 @@
-from campaign.models import EmailTemplate, EmailDraft
+from agent.campaign.models import EmailTemplate, EmailDraft
 from agent.core import llm_gpt
 
 template_llm = llm_gpt.with_structured_output(EmailTemplate)

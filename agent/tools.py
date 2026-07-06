@@ -4,8 +4,8 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from langchain_core.tools import tool
 
-from config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
-from db.client import users_collection
+from agent.config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
+from agent.db.client import users_collection
 
 
 @tool
