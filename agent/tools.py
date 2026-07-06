@@ -31,19 +31,19 @@ def find_users(
         for k, v in filters.items():
             if isinstance(v, list):
                 if all(isinstance(x, str) for x in v):
-                    alternation = "|".join(re.escape(x) for x in v)
-                    query[k] = {"$regex": f"^({alternation})$", "$options": "i"}
+                    pattern = "|".join(re.escape(x) for x in v)
+                    query[k] = re.compile(pattern, re.IGNORECASE)
                 else:
                     query[k] = v
             elif isinstance(v, dict) and "$in" in v:
                 in_list = v["$in"]
                 if isinstance(in_list, list) and all(isinstance(x, str) for x in in_list):
-                    alternation = "|".join(re.escape(x) for x in in_list)
-                    query[k] = {"$regex": f"^({alternation})$", "$options": "i"}
+                    pattern = "|".join(re.escape(x) for x in in_list)
+                    query[k] = re.compile(pattern, re.IGNORECASE)
                 else:
                     query[k] = v
             elif isinstance(v, str):
-                query[k] = {"$regex": f"^{re.escape(v)}$", "$options": "i"}
+                query[k] = re.compile(re.escape(v), re.IGNORECASE)
             else:
                 query[k] = v
 
