@@ -121,24 +121,39 @@ sequenceDiagram
 
 ```text
 Lookout/
-├── frontend/             # The complete React + Vite application
-│   ├── src/              # React components, Tailwind CSS v4, API hooks
-│   └── package.json
+├── frontend/                 # React + Vite application (Dashboard UI)
+│   ├── index.html            # Entry HTML with typography & meta tags
+│   ├── vite.config.js        # Vite config with API proxy to port 8000
+│   └── src/                  
+│       ├── App.jsx           # Main state machine orchestrating the UI flow
+│       ├── api.js            # Fetch wrapper linking to FastAPI backend
+│       ├── index.css         # Tailwind v4 theme & custom dark mode tokens
+│       └── components/       
+│           ├── PromptInput.jsx       # NLP chat-like input bar
+│           ├── MatchedUsersTable.jsx # User discovery results view
+│           ├── TemplatePreview.jsx   # Email template approval card
+│           ├── SendProgress.jsx      # Live SMTP dispatch status
+│           ├── DispatchSummary.jsx   # Post-campaign KPI metrics
+│           └── DispatchHistory.jsx   # Log of past prompts and targets
 │
-├── backend/              # The FastAPI server
-│   └── server.py         # HTTP bridge for the frontend UI
+├── backend/                  # API Layer
+│   └── server.py             # FastAPI HTTP bridge, tracking active dispatch states
 │
-├── agent/                # The Core AI Logic & Database Tools
-│   ├── campaign/         # Email drafting, rendering, and Pydantic models
-│   ├── db/               # MongoDB client configuration
-│   ├── ui/               # Command-line interface aesthetics
-│   ├── core.py           # LangChain Groq agent & prompts
-│   ├── tools.py          # Brevo dispatch & MongoDB discovery tools
-│   ├── cli.py            # Terminal app entrypoint
-│   └── config.py         # Secrets and environment config
+├── agent/                    # Core AI Logic & Tooling
+│   ├── core.py               # LangChain Groq agent init & system directives
+│   ├── tools.py              # Discovery tool (MongoDB) & Sender tool (Brevo)
+│   ├── cli.py                # Standalone rich terminal application
+│   ├── config.py             # Environment variable loaders
+│   ├── campaign/             
+│   │   ├── drafting.py       # LLM template generation, placeholder injection, HTML wrapper
+│   │   └── models.py         # Strict Pydantic schemas (EmailTemplate, EmailDraft)
+│   ├── db/                   
+│   │   └── client.py         # PyMongo connection to Atlas
+│   └── ui/                   
+│       └── cli.py            # Terminal aesthetics (spinners, color formatting)
 │
-├── pyproject.toml        # Python dependencies
-└── .env                  # Environment variables
+├── pyproject.toml            # Python dependencies (managed via uv)
+└── .env                      # API keys and secrets
 ```
 
 ---
