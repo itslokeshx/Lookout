@@ -143,4 +143,6 @@ def show_summary(result):
 
 def prompt_input():
     rule()
+    print(f"  {DARK}e.g. top 5 users by listening time · inactive users · newest signups{RESET}")
+    print()
     return input(f"  {ACCENT}▸{RESET} {WHITE}target:{RESET} ").strip()
