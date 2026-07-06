@@ -121,37 +121,21 @@ sequenceDiagram
 
 ```text
 Lookout/
-├── frontend/                 # React + Vite application (Dashboard UI)
-│   ├── index.html            # Entry HTML with typography & meta tags
-│   ├── vite.config.js        # Vite config with API proxy to port 8000
-│   └── src/                  
-│       ├── App.jsx           # Main state machine orchestrating the UI flow
-│       ├── api.js            # Fetch wrapper linking to FastAPI backend
-│       ├── index.css         # Tailwind v4 theme & custom dark mode tokens
-│       └── components/       
-│           ├── PromptInput.jsx       # NLP chat-like input bar
-│           ├── MatchedUsersTable.jsx # User discovery results view
-│           ├── TemplatePreview.jsx   # Email template approval card
-│           ├── SendProgress.jsx      # Live SMTP dispatch status
-│           ├── DispatchSummary.jsx   # Post-campaign KPI metrics
-│           └── DispatchHistory.jsx   # Log of past prompts and targets
-│
-├── backend/                  # API Layer
-│   └── server.py             # FastAPI HTTP bridge, tracking active dispatch states
-│
-├── agent/                    # Core AI Logic & Tooling
-│   ├── core.py               # LangChain Groq agent init & system directives
-│   ├── tools.py              # Discovery tool (MongoDB) & Sender tool (Brevo)
-│   ├── cli.py                # Standalone rich terminal application
-│   ├── config.py             # Environment variable loaders
+├── agent/                    # 🧠 CORE AI ENGINE (Primary Logic)
+│   ├── core.py               # ➔ LangChain Groq agent & natural language discovery directives
+│   ├── tools.py              # ➔ Agent Tools: MongoDB dynamic querying & Brevo SMTP integration
+│   ├── cli.py                # ➔ Powerful standalone terminal application & orchestrator
+│   ├── config.py             # ➔ Environment variable loader
 │   ├── campaign/             
-│   │   ├── drafting.py       # LLM template generation, placeholder injection, HTML wrapper
-│   │   └── models.py         # Strict Pydantic schemas (EmailTemplate, EmailDraft)
+│   │   ├── drafting.py       # ➔ LLM email generation, safe placeholder injection, HTML wrapper
+│   │   └── models.py         # ➔ Strict Pydantic schemas (EmailTemplate, EmailDraft, DispatchedResult)
 │   ├── db/                   
-│   │   └── client.py         # PyMongo connection to Atlas
+│   │   └── client.py         # ➔ PyMongo connection to Atlas
 │   └── ui/                   
-│       └── cli.py            # Terminal aesthetics (spinners, color formatting)
+│       └── cli.py            # ➔ Advanced terminal aesthetics (spinners, layouts, formatting)
 │
+├── frontend/                 # React UI Dashboard (Vite + Tailwind v4)
+├── backend/                  # FastAPI Server (Thin HTTP wrapper connecting UI to the Agent)
 ├── pyproject.toml            # Python dependencies (managed via uv)
 └── .env                      # API keys and secrets
 ```
