@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 
 from models import DispatchedResult
 from agent import finder_agent
-from drafting import generate_template, renderTemplate
+from drafting import generate_template, renderTemplate, to_html
 from tools import sendMail
 from ui import Spinner, banner, show_template, show_recipients, ask_approval
 from ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input
@@ -50,7 +50,8 @@ def run_dispatch(user_prompt: str):
     sent, failed = 0, 0
     for user in matched_users:
         draft = renderTemplate(template, user)
-        result = sendMail.invoke({"receiver": draft.recipient, "subject": draft.subject, "body": draft.body})
+        html_body = to_html(draft)
+        result = sendMail.invoke({"receiver": draft.recipient, "subject": draft.subject, "body": html_body})
         if "Failed" in result:
             show_send_result(draft.recipient, False, result.split("Failed:")[-1].strip())
             failed += 1
