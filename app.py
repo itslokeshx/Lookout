@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from agent import finder_agent, sendMail
 from campaign import DispatchedResult, generate_template, renderTemplate, to_html
 from ui import Spinner, banner, show_template, show_recipients, ask_approval
-from ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input
+from ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input, ask_loop
 
 
 def get_tool_result(agent_response):
@@ -68,6 +68,11 @@ def run_dispatch(user_prompt: str):
 
 if __name__ == "__main__":
     banner()
-    prompt = prompt_input()
-    print()
-    run_dispatch(prompt)
+    while True:
+        prompt = prompt_input()
+        if not prompt:
+            break
+        print()
+        run_dispatch(prompt)
+        if not ask_loop():
+            break

@@ -145,4 +145,11 @@ def prompt_input():
     rule()
     print(f"  {DARK}e.g. top 5 users by listening time · inactive users · newest signups{RESET}")
     print()
-    return input(f"  {ACCENT}▸{RESET} {WHITE}target:{RESET} ").strip()
+    return input(f"  {ACCENT}▸{RESET} {WHITE}enter the target users:{RESET} ").strip()
+
+
+def ask_loop() -> bool:
+    rule("─")
+    choice = input(f"  {HI}▸ mail again or exit?{RESET} {DARK}m/e{RESET} ").strip().lower()
+    print()
+    return choice in ("m", "mail", "y", "yes")
