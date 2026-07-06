@@ -7,7 +7,6 @@ Endpoints:
   GET  /api/dispatch-history — List past dispatches
 """
 
-import json
 import time
 import uuid
 from datetime import datetime, timezone
@@ -15,10 +14,10 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage
 
-from agent import finder_agent, sendMail
-from campaign import generate_template, renderTemplate, to_html, DispatchedResult
+from agent import finder_agent, sendMail, get_tool_result
+from campaign import generate_template, renderTemplate, to_html
 
 app = FastAPI(title="Lookout API", version="0.1.0")
 
@@ -38,14 +37,6 @@ class FindUsersRequest(BaseModel):
 
 class ApproveDispatchRequest(BaseModel):
     dispatch_id: str
-
-
-def get_tool_result(agent_response):
-    """Extract the find_users ToolMessage result from the agent response."""
-    for msg in reversed(agent_response["messages"]):
-        if isinstance(msg, ToolMessage) and msg.name == "find_users":
-            return json.loads(msg.content)
-    return None
 
 
 @app.post("/api/find-users")
