@@ -9,7 +9,7 @@ import threading
 from agent.config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
 from agent.db.client import users_collection
 
-query_cache = threading.local()
+last_query_result = []
 
 
 @tool
@@ -82,10 +82,10 @@ def find_users(
             for k, v in user.items()
         }
 
+    global last_query_result
     serialized_users = [serialize(u) for u in targeted_users]
-    query_cache.last_matched_users = serialized_users
+    last_query_result = serialized_users
 
-    # Return a minimal summary to the LLM to prevent context overflow
     return f"Successfully found {len(serialized_users)} users matching the criteria."
 
 

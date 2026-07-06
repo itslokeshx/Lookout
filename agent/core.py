@@ -5,16 +5,13 @@ from langchain.agents import create_agent
 from langchain_core.messages import ToolMessage
 
 from agent.config import GROQ_API_KEY
+import agent.tools as tools_module
 from agent.tools import find_users
 
-
-from agent.tools import find_users, query_cache
-
-
 def get_tool_result(agent_response):
-    """Extract the matched users directly from the thread-local query cache to bypass LLM context limits."""
-    users = getattr(query_cache, "last_matched_users", [])
-    query_cache.last_matched_users = None  
+    """Extract the matched users directly from the global cache to bypass LLM context limits."""
+    users = tools_module.last_query_result
+    tools_module.last_query_result = []  
     return users
 
 llm_gpt = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
