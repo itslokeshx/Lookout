@@ -61,7 +61,7 @@ def to_html(draft: EmailDraft) -> str:
 
 <tr>
 <td style="padding:32px 40px 24px;border-bottom:1px solid #e5e7eb;">
-<span style="font-size:20px;font-weight:700;color:#7c3aed;">SoulSync</span>
+<span style="font-size:20px;font-weight:700;color:#1db954;">SoulSync</span>
 </td>
 </tr>
 
