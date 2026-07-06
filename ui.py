@@ -4,14 +4,20 @@ import threading
 import shutil
 
 
-EMBER = "\033[38;5;166m"
-SAND = "\033[38;5;180m"
-SAGE = "\033[38;5;108m"
-RUST = "\033[38;5;131m"
-WHITE = "\033[38;5;253m"
-MUTE = "\033[38;5;242m"
+C1 = "\033[38;5;33m"
+C2 = "\033[38;5;39m"
+C3 = "\033[38;5;44m"
+C4 = "\033[38;5;49m"
+C5 = "\033[38;5;48m"
+C6 = "\033[38;5;83m"
+ACCENT = "\033[38;5;39m"
+HI = "\033[38;5;48m"
+WARN = "\033[38;5;196m"
+INFO = "\033[38;5;179m"
+WHITE = "\033[38;5;255m"
+GRAY = "\033[38;5;245m"
+DARK = "\033[38;5;238m"
 BOLD = "\033[1m"
-DIM = "\033[2m"
 RESET = "\033[0m"
 
 
@@ -19,26 +25,35 @@ def width():
     return min(shutil.get_terminal_size().columns, 72)
 
 
-def rule():
-    print(f"  {MUTE}{'·' * (width() - 4)}{RESET}")
+def rule(char="━"):
+    print(f"  {DARK}{char * (width() - 4)}{RESET}")
 
 
 def banner():
+    lines = [
+        " █     ████  ████  █  █ ████  █  █ █████",
+        " █     █  █  █  █  █ █  █  █  █  █   █  ",
+        " █     █  █  █  █  ██   █  █  █  █   █  ",
+        " █     █  █  █  █  █ █  █  █  █  █   █  ",
+        " ████  ████  ████  █  █ ████  ████   █  ",
+    ]
+    gradient = [C1, C2, C3, C4, C5]
     print()
-    print(f"  {BOLD}{EMBER}L O O K O U T{RESET}")
-    print(f"  {MUTE}campaign dispatch engine{RESET}")
+    for i, row in enumerate(lines):
+        print(f"  {gradient[i]}{BOLD}{row}{RESET}")
+    print(f"  {GRAY}campaign dispatch engine{RESET}")
     print()
 
 
 def spinner(message, stop_event):
-    frames = ["◜", "◠", "◝", "◞", "◡", "◟"]
+    frames = ["▱▱▱", "▰▱▱", "▰▰▱", "▰▰▰", "▱▰▰", "▱▱▰"]
     i = 0
     while not stop_event.is_set():
-        sys.stdout.write(f"\r  {EMBER}{frames[i % len(frames)]}{RESET} {MUTE}{message}{RESET}")
+        sys.stdout.write(f"\r  {ACCENT}{frames[i % len(frames)]}{RESET} {GRAY}{message}{RESET}")
         sys.stdout.flush()
         i += 1
-        time.sleep(0.1)
-    sys.stdout.write(f"\r{' ' * (len(message) + 10)}\r")
+        time.sleep(0.15)
+    sys.stdout.write(f"\r{' ' * (len(message) + 16)}\r")
     sys.stdout.flush()
 
 
@@ -59,67 +74,73 @@ class Spinner:
 
 
 def show_template(preview):
-    print(f"  {SAND}subject{RESET}  {WHITE}{preview.subject}{RESET}")
+    rule()
+    print(f"  {ACCENT}▎{RESET} {GRAY}PREVIEW{RESET}")
+    rule()
+    print()
+    print(f"  {INFO}⦿{RESET} {WHITE}{preview.subject}{RESET}")
     print()
     for body_line in preview.body.split("\n"):
         if body_line.strip():
-            print(f"  {WHITE}{body_line}{RESET}")
+            print(f"    {WHITE}{body_line}{RESET}")
         else:
             print()
     print()
-    rule()
 
 
 def show_recipients(matched_users):
     count = len(matched_users)
-    print()
-    print(f"  {SAGE}{count}{RESET} {WHITE}recipient{'s' if count != 1 else ''}{RESET}")
+    rule()
+    print(f"  {ACCENT}▎{RESET} {GRAY}TARGETS{RESET}  {HI}{count}{RESET}")
+    rule()
     print()
 
     for user in matched_users:
         rank = str(user["rank"]).rjust(2)
-        tag = f"  {SAND}preview{RESET}" if user["rank"] == 1 else ""
-        print(f"  {MUTE}{rank}{RESET}  {WHITE}{user['name']}{RESET}  {MUTE}{user['email']}{RESET}{tag}")
+        tag = f" {INFO}◂ preview{RESET}" if user["rank"] == 1 else ""
+        print(f"  {DARK}{rank}{RESET}  {WHITE}{user['name']}{RESET}  {GRAY}{user['email']}{RESET}{tag}")
 
     print()
 
 
 def ask_approval():
-    rule()
-    choice = input(f"  {EMBER}dispatch?{RESET} {MUTE}y/n{RESET} ").strip().lower()
+    rule("─")
+    choice = input(f"  {HI}▸ dispatch?{RESET} {DARK}y/n{RESET} ").strip().lower()
     print()
     return choice == "y"
 
 
 def show_send_result(receiver, success, detail=""):
-    mark = f"{SAGE}→{RESET}" if success else f"{RUST}×{RESET}"
-    print(f"  {mark}  {WHITE}{receiver}{RESET}  {MUTE}{detail}{RESET}")
+    if success:
+        print(f"  {HI}▸{RESET} {WHITE}{receiver}{RESET}  {GRAY}{detail}{RESET}")
+    else:
+        print(f"  {WARN}▸{RESET} {WHITE}{receiver}{RESET}  {GRAY}{detail}{RESET}")
 
 
 def show_aborted():
-    print(f"  {RUST}cancelled{RESET}\n")
+    print(f"  {WARN}▪{RESET} {GRAY}cancelled{RESET}\n")
 
 
 def show_no_match():
-    print(f"\n  {RUST}no users matched{RESET}\n")
+    print(f"\n  {WARN}▪{RESET} {GRAY}no users matched{RESET}\n")
 
 
 def show_summary(result):
-    print()
     rule()
     print()
     parts = []
     if result.sent:
-        parts.append(f"{SAGE}{result.sent} sent{RESET}")
+        parts.append(f"{HI}{result.sent} sent{RESET}")
     if result.failed:
-        parts.append(f"{RUST}{result.failed} failed{RESET}")
+        parts.append(f"{WARN}{result.failed} failed{RESET}")
     if result.rejected:
-        parts.append(f"{SAND}{result.rejected} rejected{RESET}")
-    parts.append(f"{MUTE}{result.duration}s{RESET}")
+        parts.append(f"{INFO}{result.rejected} rejected{RESET}")
+    parts.append(f"{DARK}{result.duration}s{RESET}")
 
-    print(f"  {'  ·  '.join(parts)}")
+    print(f"  {'  ━  '.join(parts)}")
     print()
 
 
 def prompt_input():
-    return input(f"  {EMBER}›{RESET} ").strip()
+    rule()
+    return input(f"  {ACCENT}▸{RESET} {WHITE}target:{RESET} ").strip()
