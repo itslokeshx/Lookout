@@ -4,8 +4,12 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from langchain_core.tools import tool
 
+import threading
+
 from agent.config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
 from agent.db.client import users_collection
+
+query_cache = threading.local()
 
 
 @tool
@@ -13,7 +17,7 @@ def find_users(
     filters: dict | None = None,
     sort_by: str | None = None,
     ascending: bool = False,
-    limit: int = 5,
+    limit: int = 1000,
 ):
     """
     Query SoulSync users with optional filters, sorting, and limit.
@@ -21,6 +25,7 @@ def find_users(
     Available fields:
     - name
     - email
+    - authProvider
     - totalListeningTime
     - updatedAt (last active)
     - createdAt (joined date)
@@ -56,6 +61,7 @@ def find_users(
             "totalListeningTime": 1,
             "updatedAt": 1,
             "createdAt": 1,
+            "authProvider": 1,
         },
     )
 
@@ -66,10 +72,8 @@ def find_users(
         )
 
     if limit is None or limit <= 0:
-        limit = 50
-    else:
-        limit = min(limit, 50)
-        
+        limit = 10000
+    
     targeted_users = targeted_users.limit(limit)
 
     def serialize(user):
@@ -78,7 +82,11 @@ def find_users(
             for k, v in user.items()
         }
 
-    return json.dumps([serialize(u) for u in targeted_users])
+    serialized_users = [serialize(u) for u in targeted_users]
+    query_cache.last_matched_users = serialized_users
+
+    # Return a minimal summary to the LLM to prevent context overflow
+    return f"Successfully found {len(serialized_users)} users matching the criteria."
 
 
 @tool

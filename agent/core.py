@@ -8,15 +8,14 @@ from agent.config import GROQ_API_KEY
 from agent.tools import find_users
 
 
+from agent.tools import find_users, query_cache
+
+
 def get_tool_result(agent_response):
-    """Extract the find_users ToolMessage result from the agent response."""
-    for msg in reversed(agent_response["messages"]):
-        if isinstance(msg, ToolMessage) and msg.name == "find_users":
-            try:
-                return json.loads(msg.content)
-            except json.JSONDecodeError:
-                pass
-    return None
+    """Extract the matched users directly from the thread-local query cache to bypass LLM context limits."""
+    users = getattr(query_cache, "last_matched_users", [])
+    query_cache.last_matched_users = None  
+    return users
 
 llm_gpt = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
 
@@ -31,6 +30,7 @@ Your job is to identify the correct SoulSync users by calling the `find_users` t
 Available fields:
 * `name`
 * `email`
+* `authProvider` (e.g. "google")
 * `totalListeningTime` (seconds)
 * `createdAt` (join date)
 * `updatedAt` (last active)
