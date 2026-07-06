@@ -65,6 +65,11 @@ def find_users(
             -1 if not ascending else 1,
         )
 
+    if limit is None or limit <= 0:
+        limit = 50
+    else:
+        limit = min(limit, 50)
+        
     targeted_users = targeted_users.limit(limit)
 
     def serialize(user):

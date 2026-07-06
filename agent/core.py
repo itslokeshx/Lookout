@@ -12,7 +12,10 @@ def get_tool_result(agent_response):
     """Extract the find_users ToolMessage result from the agent response."""
     for msg in reversed(agent_response["messages"]):
         if isinstance(msg, ToolMessage) and msg.name == "find_users":
-            return json.loads(msg.content)
+            try:
+                return json.loads(msg.content)
+            except json.JSONDecodeError:
+                pass
     return None
 
 llm_gpt = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
