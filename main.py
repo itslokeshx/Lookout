@@ -36,7 +36,8 @@ def run_dispatch(user_prompt: str):
     with Spinner("Generating template..."):
         template = generate_template(matched_users, user_prompt)
 
-    show_template(template)
+    preview = renderTemplate(template, matched_users[0])
+    show_template(preview)
     show_recipients(matched_users)
 
     if not ask_approval():

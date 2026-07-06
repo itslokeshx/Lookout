@@ -67,17 +67,16 @@ class Spinner:
         self.thread.join()
 
 
-def show_template(template):
+def show_template(preview):
     w = width()
     print(f"  {BOLD}{PURPLE}╭{'─' * (w - 4)}╮{RESET}")
-    print(f"  {PURPLE}│{RESET} {YELLOW}TEMPLATE PREVIEW{' ' * (w - 22)}{PURPLE}│{RESET}")
+    print(f"  {PURPLE}│{RESET} {YELLOW}EXAMPLE PREVIEW{' ' * (w - 21)}{PURPLE}│{RESET}")
     print(f"  {PURPLE}├{'─' * (w - 4)}┤{RESET}")
 
-    subject_label = f"{DIM}Subject:{RESET} {WHITE}{template.subject_template}{RESET}"
-    print(f"  {PURPLE}│{RESET} {subject_label}")
+    print(f"  {PURPLE}│{RESET} {DIM}Subject:{RESET} {WHITE}{preview.subject}{RESET}")
     print(f"  {PURPLE}│{RESET}")
 
-    for body_line in template.body_template.split("\n"):
+    for body_line in preview.body.split("\n"):
         print(f"  {PURPLE}│{RESET}  {WHITE}{body_line}{RESET}")
 
     print(f"  {PURPLE}╰{'─' * (w - 4)}╯{RESET}")
@@ -90,7 +89,8 @@ def show_recipients(matched_users):
 
     for user in matched_users:
         rank = str(user["rank"]).rjust(2)
-        print(f"    {DIM}{rank}.{RESET} {WHITE}{user['name']}{RESET}  {DIM}‹{user['email']}›{RESET}")
+        tag = f"  {CYAN}← preview{RESET}" if user["rank"] == 1 else ""
+        print(f"    {DIM}{rank}.{RESET} {WHITE}{user['name']}{RESET}  {DIM}‹{user['email']}›{RESET}{tag}")
 
     print()
 
