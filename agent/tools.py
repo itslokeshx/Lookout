@@ -16,8 +16,8 @@ last_query_result = []
 def find_users(
     filters: dict | None = None,
     sort_by: str | None = None,
-    ascending: bool = False,
-    limit: int = 1000,
+    ascending: bool | None = False,
+    limit: int | None = 200,
 ):
     """
     Query SoulSync users with optional filters, sorting, and limit.

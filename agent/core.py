@@ -36,7 +36,7 @@ Infer these arguments from the user's request:
 * `filters`
 * `sort_by`
 * `ascending`
-* `limit`
+* `limit` (Leave this completely empty if the user asks for "all users". Only set a number if they specifically ask for "top N" or a specific count.)
 
 Intent examples:
 * Top / most active → `sort_by="totalListeningTime"`, `ascending=False`
