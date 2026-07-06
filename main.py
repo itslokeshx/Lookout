@@ -7,6 +7,8 @@ from models import DispatchedResult
 from agent import finder_agent
 from drafting import generate_template, renderTemplate
 from tools import sendMail
+from ui import Spinner, banner, show_template, show_recipients, ask_approval
+from ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input
 
 
 def get_tool_result(agent_response):
@@ -18,29 +20,27 @@ def get_tool_result(agent_response):
 
 def run_dispatch(user_prompt: str):
     start = time.time()
-    response = finder_agent.invoke({"messages": [HumanMessage(content=user_prompt)]})
-    matched_users = get_tool_result(response)
+
+    with Spinner("Searching for users..."):
+        response = finder_agent.invoke({"messages": [HumanMessage(content=user_prompt)]})
+        matched_users = get_tool_result(response)
 
     if not matched_users:
-        print("No users matched.")
+        show_no_match()
         return DispatchedResult(totalUsers=0, sent=0, failed=0, duration=round(time.time() - start, 2))
 
     for i, user in enumerate(matched_users):
         user["minutesListened"] = round(user.pop("totalListeningTime", 0) / 60)
         user["rank"] = i + 1
 
-    template = generate_template(matched_users, user_prompt)
+    with Spinner("Generating template..."):
+        template = generate_template(matched_users, user_prompt)
 
-    print(f"Matched {len(matched_users)} users.\n")
-    print(f"Subject: {template.subject_template}\n\n{template.body_template}")
-    print(f"\nRecipients:")
-    for user in matched_users:
-        print(f"  {user['rank']}. {user['name']} ({user['email']})")
-    print()
-    choice = input("Approve? (y/n): ").strip().lower()
+    show_template(template)
+    show_recipients(matched_users)
 
-    if choice != "y":
-        print("Aborted.")
+    if not ask_approval():
+        show_aborted()
         return DispatchedResult(
             totalUsers=len(matched_users), sent=0, failed=0,
             rejected=len(matched_users), duration=round(time.time() - start, 2)
@@ -51,19 +51,23 @@ def run_dispatch(user_prompt: str):
         draft = renderTemplate(template, user)
         result = sendMail.invoke({"receiver": draft.recipient, "subject": draft.subject, "body": draft.body})
         if "Failed" in result:
-            print(f"  ✗ {result}")
+            show_send_result(draft.recipient, False, result.split("Failed:")[-1].strip())
             failed += 1
         else:
-            print(f"  ✓ {result}")
+            detail = result.split("(")[-1].rstrip(")") if "(" in result else ""
+            show_send_result(draft.recipient, True, detail)
             sent += 1
 
-    return DispatchedResult(
+    dispatch = DispatchedResult(
         totalUsers=len(matched_users), sent=sent, failed=failed,
         duration=round(time.time() - start, 2)
     )
+    show_summary(dispatch)
+    return dispatch
 
 
 if __name__ == "__main__":
-    prompt = input("Describe who to email: ")
-    result = run_dispatch(prompt)
-    print(result)
+    banner()
+    prompt = prompt_input()
+    print()
+    run_dispatch(prompt)
