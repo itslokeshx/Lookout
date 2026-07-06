@@ -1,4 +1,5 @@
 import json
+import re
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from langchain_core.tools import tool
@@ -25,7 +26,26 @@ def find_users(
     - createdAt (joined date)
     """
 
-    query = filters or {}
+    query = {}
+    if filters:
+        for k, v in filters.items():
+            if isinstance(v, list):
+                if all(isinstance(x, str) for x in v):
+                    alternation = "|".join(re.escape(x) for x in v)
+                    query[k] = {"$regex": f"^({alternation})$", "$options": "i"}
+                else:
+                    query[k] = v
+            elif isinstance(v, dict) and "$in" in v:
+                in_list = v["$in"]
+                if isinstance(in_list, list) and all(isinstance(x, str) for x in in_list):
+                    alternation = "|".join(re.escape(x) for x in in_list)
+                    query[k] = {"$regex": f"^({alternation})$", "$options": "i"}
+                else:
+                    query[k] = v
+            elif isinstance(v, str):
+                query[k] = {"$regex": f"^{re.escape(v)}$", "$options": "i"}
+            else:
+                query[k] = v
 
     targeted_users = users_collection.find(
         query,

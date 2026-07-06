@@ -10,7 +10,7 @@ from ui import show_send_result, show_aborted, show_no_match, show_summary, prom
 
 
 def get_tool_result(agent_response):
-    for msg in agent_response["messages"]:
+    for msg in reversed(agent_response["messages"]):
         if isinstance(msg, ToolMessage) and msg.name == "find_users":
             return json.loads(msg.content)
     return None
