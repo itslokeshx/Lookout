@@ -9,7 +9,7 @@ import DispatchHistory from './components/DispatchHistory';
 import ChatView from './components/ChatView';
 import SetupView from './components/SetupView';
 import { TableSkeleton, TemplateSkeleton } from './components/Skeletons';
-import { findUsers, approveDispatch, getDispatchHistory, getSettings } from './api';
+import { findUsers, approveDispatch, getDispatchHistory, getSettings, clearDispatchHistory } from './api';
 
 export default function App() {
   const [view, setView] = useState('loading');
@@ -69,6 +69,15 @@ export default function App() {
     setSendFailed(0);
     setDispatchResult(null);
     getDispatchHistory().then(setHistory).catch(() => {});
+  }, []);
+
+  const handleClearHistory = useCallback(async () => {
+    try {
+      await clearDispatchHistory();
+      setHistory([]);
+    } catch (err) {
+      console.error("Failed to clear history", err);
+    }
   }, []);
 
   const handleSubmit = useCallback(async (userPrompt) => {
@@ -237,7 +246,7 @@ export default function App() {
                       <p className="text-sm text-text-secondary">{prompt}</p>
                     </div>
                   </div>
-                  <MatchedUsersTable users={matchedUsers} prompt={prompt} />
+                  <MatchedUsersTable users={matchedUsers} prompt={prompt} settings={settings} />
                   <TemplatePreview
                     template={template}
                     onApprove={handleApprove}
@@ -263,7 +272,7 @@ export default function App() {
                 </div>
               )}
 
-              {stage === 'idle' && <DispatchHistory dispatches={history} />}
+              {stage === 'idle' && <DispatchHistory dispatches={history} onClear={handleClearHistory} />}
             </div>
           </div>
         )}

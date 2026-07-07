@@ -30,7 +30,7 @@ function formatTime(ts) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function DispatchHistory({ dispatches = [] }) {
+export default function DispatchHistory({ dispatches = [], onClear }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!dispatches.length) {
@@ -53,15 +53,25 @@ export default function DispatchHistory({ dispatches = [] }) {
 
   return (
     <div className="w-full max-w-2xl mx-auto mt-12">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 text-xs text-text-tertiary hover:text-text-secondary transition-colors duration-150 mb-3 cursor-pointer"
-      >
-        <span className="uppercase tracking-wider font-medium">
-          Recent dispatches
-        </span>
-        {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-      </button>
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 text-xs text-text-tertiary hover:text-text-secondary transition-colors duration-150 cursor-pointer"
+        >
+          <span className="uppercase tracking-wider font-medium">
+            Recent dispatches
+          </span>
+          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
+        {onClear && (
+          <button
+            onClick={onClear}
+            className="text-[11px] font-medium text-text-tertiary hover:text-error transition-colors cursor-pointer"
+          >
+            Clear history
+          </button>
+        )}
+      </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
         {visible.map((d, i) => (

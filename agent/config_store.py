@@ -167,3 +167,37 @@ def check_join_relationship(
         "match_count": match_count,
         "sample_value": str(sample_value),
     }
+
+
+HISTORY_COLLECTION = "_lookout_history"
+
+
+def add_dispatch_history(doc: dict):
+    global _client
+    if _client is None:
+        _client = MongoClient(MONGODB_URI)
+    settings = load_settings()
+    db_name = settings.db_name if settings.db_name else "lookout"
+    coll = _client[db_name][HISTORY_COLLECTION]
+    coll.insert_one(doc)
+
+
+def load_dispatch_history() -> list[dict]:
+    global _client
+    if _client is None:
+        _client = MongoClient(MONGODB_URI)
+    settings = load_settings()
+    db_name = settings.db_name if settings.db_name else "lookout"
+    coll = _client[db_name][HISTORY_COLLECTION]
+    cursor = coll.find({}, {"_id": 0}).sort("timestamp", -1)
+    return list(cursor)
+
+
+def clear_dispatch_history():
+    global _client
+    if _client is None:
+        _client = MongoClient(MONGODB_URI)
+    settings = load_settings()
+    db_name = settings.db_name if settings.db_name else "lookout"
+    coll = _client[db_name][HISTORY_COLLECTION]
+    coll.delete_many({})

@@ -22,6 +22,9 @@ from agent.config_store import (
     FieldMapping,
     MetricField,
     JoinConfig,
+    add_dispatch_history,
+    load_dispatch_history,
+    clear_dispatch_history,
 )
 from agent.field_mapper import suggest_field_mapping
 
@@ -184,7 +187,8 @@ async def find_users_endpoint(req: FindUsersRequest):
     for i, user in enumerate(matched_users):
         for metric in settings.metrics:
             raw = user.get(metric.field, 0)
-            if metric.unit == "seconds" and isinstance(raw, (int, float)):
+            unit_lower = (metric.unit or "").lower()
+            if unit_lower in ("seconds", "sec", "s") and isinstance(raw, (int, float)):
                 user["minutesListened"] = round(raw / 60)
         user["rank"] = i + 1
 
@@ -259,7 +263,7 @@ async def approve_dispatch_endpoint(req: ApproveDispatchRequest):
         "duration": duration,
     }
 
-    dispatch_history.insert(0, {
+    add_dispatch_history({
         "id": req.dispatch_id,
         "prompt": dispatch["prompt"],
         "totalUsers": len(users),
@@ -280,7 +284,13 @@ async def approve_dispatch_endpoint(req: ApproveDispatchRequest):
 
 @app.get("/api/dispatch-history")
 async def dispatch_history_endpoint():
-    return dispatch_history
+    return load_dispatch_history()
+
+
+@app.delete("/api/dispatch-history")
+async def clear_dispatch_history_endpoint():
+    clear_dispatch_history()
+    return {"status": "cleared"}
 
 
 @app.post("/api/chat")

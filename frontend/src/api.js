@@ -68,3 +68,7 @@ export async function getDispatchHistory() {
 export async function sendChatMessage(message, history) {
   return request('POST', '/chat', { message, history });
 }
+
+export async function clearDispatchHistory() {
+  return request('DELETE', '/dispatch-history');
+}
