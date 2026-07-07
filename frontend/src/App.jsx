@@ -13,7 +13,7 @@ import { findUsers, approveDispatch, getDispatchHistory, getSettings } from './a
 
 export default function App() {
   const [view, setView] = useState('loading');
-  const [mode, setMode] = useState('chat');
+  const [mode, setMode] = useState(() => localStorage.getItem('lookout_mode') || 'chat');
   const [settings, setSettings] = useState(null);
 
   const [stage, setStage] = useState('idle');

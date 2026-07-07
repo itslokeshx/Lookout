@@ -88,7 +88,7 @@ async def update_settings(req: SaveSettingsRequest):
         db_name=req.db_name,
         collection_name=req.collection_name,
         field_mapping=FieldMapping(**req.field_mapping),
-        metrics=[MetricField(**m) for m in req.metrics],
+        metrics=[MetricField(**m) for m in req.metrics if m.get("field", "").strip()],
         sender_name=req.sender_name,
         sender_email=req.sender_email,
         product_name=req.product_name,

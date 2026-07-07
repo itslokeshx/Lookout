@@ -30,7 +30,8 @@ def chat_find_users(
     if mapping.last_active:
         projection[mapping.last_active] = 1
     for metric in settings.metrics:
-        projection[metric.field] = 1
+        if metric.field:
+            projection[metric.field] = 1
 
     query = _build_query(filters)
     cursor = collection.find(query, projection)
