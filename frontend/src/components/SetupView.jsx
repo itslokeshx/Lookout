@@ -69,12 +69,48 @@ export default function SetupView({ existingSettings, onComplete }) {
   const [fieldMapping, setFieldMapping] = useState(existingSettings?.field_mapping || {
     email: '', name: '', joined_date: '', last_active: '',
   });
-  const [metrics, setMetrics] = useState(existingSettings?.metrics || []);
-  const [extraFields, setExtraFields] = useState(existingSettings?.extra_fields || []);
-  const [newExtraField, setNewExtraField] = useState('');
+
+  // Combined custom fields state
+  const [customFields, setCustomFields] = useState(() => {
+    const list = [];
+    const existingMetrics = existingSettings?.metrics || [];
+    existingMetrics.forEach((m) => {
+      list.push({ field: m.field || '', label: m.label || '', unit: m.unit || '' });
+    });
+    const existingExtras = existingSettings?.extra_fields || [];
+    existingExtras.forEach((f) => {
+      if (!existingMetrics.some((m) => m.field === f)) {
+        list.push({ field: f, label: '', unit: '' });
+      }
+    });
+    // Ensure at least 2 entries so there are 6 fields shown in total (4 core + 2 custom)
+    while (list.length < 2) {
+      list.push({ field: '', label: '', unit: '' });
+    }
+    return list;
+  });
+
+  const handleCustomFieldChange = (index, key, value) => {
+    const updated = [...customFields];
+    updated[index] = { ...updated[index], [key]: value };
+    setCustomFields(updated);
+  };
+
+  const addCustomField = () => {
+    setCustomFields([...customFields, { field: '', label: '', unit: '' }]);
+  };
+
+  const removeCustomField = (index) => {
+    if (customFields.length > 2) {
+      setCustomFields(customFields.filter((_, i) => i !== index));
+    } else {
+      const updated = [...customFields];
+      updated[index] = { field: '', label: '', unit: '' };
+      setCustomFields(updated);
+    }
+  };
 
   // Suggestions state
-  const [suggestedExtraFields, setSuggestedExtraFields] = useState([]);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestionApplied, setSuggestionApplied] = useState(false);
 
@@ -88,9 +124,6 @@ export default function SetupView({ existingSettings, onComplete }) {
     sort_field: null, sort_ascending: false, reason: '',
   });
   const [joinCheckResult, setJoinCheckResult] = useState(null);
-
-  // Metric Builder Input State
-  const [newMetric, setNewMetric] = useState({ field: '', label: '', unit: '' });
 
   // Dynamic Steps
   const STEPS = numCollections === 2 
@@ -132,12 +165,25 @@ export default function SetupView({ existingSettings, onComplete }) {
         joined_date: result.fields.joined_date_field || '',
         last_active: result.fields.last_active_field || '',
       });
-      setMetrics(result.metrics || []);
-      if (result.extra_fields) {
-        setSuggestedExtraFields(result.extra_fields);
-        // Pre-select suggestions
-        setExtraFields(result.extra_fields);
+
+      // Unify suggestions into customFields list
+      const suggestedList = [];
+      const suggestedMetrics = result.metrics || [];
+      suggestedMetrics.forEach((m) => {
+        suggestedList.push({ field: m.field || '', label: m.label || '', unit: m.unit || '' });
+      });
+      const suggestedExtras = result.extra_fields || [];
+      suggestedExtras.forEach((f) => {
+        if (!suggestedMetrics.some((m) => m.field === f)) {
+          suggestedList.push({ field: f, label: '', unit: '' });
+        }
+      });
+      // Pad to at least 2 custom fields
+      while (suggestedList.length < 2) {
+        suggestedList.push({ field: '', label: '', unit: '' });
       }
+      setCustomFields(suggestedList);
+
       if (result.join && numCollections === 2) {
         setEnrichment((prev) => ({
           ...prev,
@@ -175,12 +221,30 @@ export default function SetupView({ existingSettings, onComplete }) {
     setLoading(true);
     setError(null);
     try {
+      const finalMetrics = [];
+      const finalExtras = [];
+
+      customFields.forEach((cf) => {
+        const fieldName = cf.field?.trim();
+        if (!fieldName) return;
+
+        finalExtras.push(fieldName);
+
+        if (cf.label?.trim() || cf.unit?.trim()) {
+          finalMetrics.push({
+            field: fieldName,
+            label: cf.label.trim() || fieldName,
+            unit: cf.unit.trim() || '',
+          });
+        }
+      });
+
       await saveSettings({
         db_name: dbName,
         collection_name: collectionName,
         field_mapping: fieldMapping,
-        metrics: metrics.filter((m) => m.field && m.field.trim()),
-        extra_fields: extraFields.filter((f) => f && f.trim()),
+        metrics: finalMetrics,
+        extra_fields: finalExtras,
         sender_name: senderName,
         sender_email: senderEmail,
         product_name: productName,
@@ -191,32 +255,6 @@ export default function SetupView({ existingSettings, onComplete }) {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const addMetric = () => {
-    if (!newMetric.field) return;
-    setMetrics([...metrics, { ...newMetric }]);
-    setNewMetric({ field: '', label: '', unit: '' });
-  };
-
-  const removeMetric = (index) => {
-    setMetrics(metrics.filter((_, i) => i !== index));
-  };
-
-  const toggleExtraField = (field) => {
-    if (extraFields.includes(field)) {
-      setExtraFields(extraFields.filter((f) => f !== field));
-    } else {
-      setExtraFields([...extraFields, field]);
-    }
-  };
-
-  const addCustomExtraField = () => {
-    const trimmed = newExtraField.trim();
-    if (trimmed && !extraFields.includes(trimmed)) {
-      setExtraFields([...extraFields, trimmed]);
-      setNewExtraField('');
     }
   };
 
@@ -347,11 +385,14 @@ export default function SetupView({ existingSettings, onComplete }) {
       {step === 1 && (
         <div className="space-y-6 animate-slide-up">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-text-primary">Field Mapping</span>
+            <div>
+              <span className="text-sm font-semibold text-text-primary">Field Mapping</span>
+              <p className="text-xs text-text-tertiary mt-0.5">Assign attributes, metrics, or custom properties to database fields.</p>
+            </div>
             <button
               onClick={handleSuggest}
               disabled={suggestionLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent-muted text-accent hover:bg-accent/20 transition-all duration-150 disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent-muted text-accent hover:bg-accent/20 transition-all duration-150 disabled:opacity-50 cursor-pointer"
             >
               {suggestionLoading ? <Loader2 size={12} className="animate-spin" /> : null}
               {suggestionLoading ? 'Analyzing...' : 'Auto-suggest'}
@@ -359,13 +400,15 @@ export default function SetupView({ existingSettings, onComplete }) {
           </div>
 
           {suggestionApplied && (
-            <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
+            <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2.5 flex items-start gap-2">
+              <Check size={14} className="text-accent mt-0.5 shrink-0" />
               <p className="text-xs text-accent">
-                AI suggestion applied. Review, modify, or add fields below before continuing.
+                AI suggestion applied. Review and adjust mappings below.
               </p>
             </div>
           )}
 
+          {/* Core Mappings (Email, Name, Join Date, Last Active) */}
           <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
             <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Core Mappings</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -376,115 +419,77 @@ export default function SetupView({ existingSettings, onComplete }) {
             </div>
           </div>
 
-          {/* Metrics Section */}
+          {/* Unified Custom Fields and Metrics */}
           <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
-            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Numeric Metrics</span>
-            
-            {/* Active Metrics List */}
-            {metrics.length > 0 && (
-              <div className="space-y-2">
-                {metrics.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between bg-surface border border-border rounded-lg px-3 py-2 text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-text-primary font-medium">{m.label || m.field}</span>
-                      <span className="text-xs text-text-tertiary">Field: `{m.field}` {m.unit ? `(${m.unit})` : ''}</span>
-                    </div>
-                    <button
-                      onClick={() => removeMetric(i)}
-                      className="text-text-tertiary hover:text-error transition-colors p-1.5 cursor-pointer"
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                Additional Fields & Metrics
+              </span>
+            </div>
+
+            {/* Column Headers */}
+            <div className="grid grid-cols-12 gap-3 px-2 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider">
+              <div className="col-span-5">Database Field</div>
+              <div className="col-span-4">Display Label</div>
+              <div className="col-span-2">Unit</div>
+              <div className="col-span-1"></div>
+            </div>
+
+            <div className="space-y-3">
+              {customFields.map((cf, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-surface border border-border rounded-xl p-2.5 transition-all hover:border-border-strong/50">
+                  <div className="col-span-5">
+                    <select
+                      value={cf.field}
+                      onChange={(e) => handleCustomFieldChange(idx, 'field', e.target.value)}
+                      className="w-full bg-surface-raised border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong focus:bg-surface-hover appearance-none cursor-pointer"
                     >
-                      <Trash2 size={14} />
+                      <option value="">None</option>
+                      {fieldNames.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-4">
+                    <input
+                      type="text"
+                      value={cf.label}
+                      onChange={(e) => handleCustomFieldChange(idx, 'label', e.target.value)}
+                      placeholder="e.g. Listened Time"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <input
+                      type="text"
+                      value={cf.unit}
+                      onChange={(e) => handleCustomFieldChange(idx, 'unit', e.target.value)}
+                      placeholder="e.g. sec"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong"
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => removeCustomField(idx)}
+                      className="text-text-tertiary hover:text-error transition-colors p-1.5 cursor-pointer"
+                      title="Clear or remove field"
+                    >
+                      <Trash2 size={15} />
                     </button>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Metric Builder */}
-            <div className="border border-border/60 rounded-lg p-3 bg-surface/50 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <SelectField label="Select Field" value={newMetric.field} onChange={(v) => setNewMetric({ ...newMetric, field: v })} options={fieldNames} placeholder="Select field" />
-                <InputField label="Custom Label" value={newMetric.label} onChange={(v) => setNewMetric({ ...newMetric, label: v })} placeholder="e.g. Listened Time" />
-                <InputField label="Unit" value={newMetric.unit} onChange={(v) => setNewMetric({ ...newMetric, unit: v })} placeholder="e.g. sec" />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={addMetric}
-                  disabled={!newMetric.field}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent text-surface hover:bg-accent-hover transition-colors disabled:opacity-40 cursor-pointer"
-                >
-                  <Plus size={13} /> Add Metric
-                </button>
-              </div>
+                </div>
+              ))}
             </div>
-          </div>
 
-          {/* Extra Fields Section */}
-          <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
-            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Additional Fields to project</span>
-            
-            {/* Suggested / Suggested Toggles */}
-            {suggestedExtraFields.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-[11px] text-text-tertiary font-medium uppercase tracking-wider">Suggested Fields</p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestedExtraFields.map((field) => (
-                    <button
-                      key={field}
-                      type="button"
-                      onClick={() => toggleExtraField(field)}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                        extraFields.includes(field)
-                          ? 'bg-accent-muted border-accent text-accent'
-                          : 'bg-surface border-border text-text-secondary hover:border-border-strong'
-                      }`}
-                    >
-                      {extraFields.includes(field) && <Check size={12} />}
-                      {field}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Custom Extra Fields */}
-            <div className="space-y-2">
-              <p className="text-[11px] text-text-tertiary font-medium uppercase tracking-wider">Custom Extra Fields</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newExtraField}
-                  onChange={(e) => setNewExtraField(e.target.value)}
-                  placeholder="e.g. authProvider, role, status"
-                  className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-border-strong"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomExtraField}
-                  className="px-3 rounded-lg bg-surface border border-border text-text-secondary hover:bg-surface-hover cursor-pointer"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
-              {extraFields.filter(f => !suggestedExtraFields.includes(f)).length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {extraFields.filter(f => !suggestedExtraFields.includes(f)).map((field) => (
-                    <span
-                      key={field}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-accent-muted border border-accent text-accent"
-                    >
-                      {field}
-                      <button
-                        onClick={() => toggleExtraField(field)}
-                        className="hover:text-text-primary transition-colors cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+            <div className="flex justify-start">
+              <button
+                type="button"
+                onClick={addCustomField}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-border hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer text-text-secondary"
+              >
+                <Plus size={13} /> More Fields
+              </button>
             </div>
           </div>
         </div>
