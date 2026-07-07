@@ -15,6 +15,44 @@ async function request(method, path, body) {
   return res.json();
 }
 
+export async function getSettings() {
+  return request('GET', '/settings');
+}
+
+export async function saveSettings(settings) {
+  return request('POST', '/settings', settings);
+}
+
+export async function getDatabases() {
+  return request('GET', '/databases');
+}
+
+export async function getCollections(dbName) {
+  return request('GET', `/collections/${encodeURIComponent(dbName)}`);
+}
+
+export async function getSample(dbName, collectionName) {
+  return request('GET', `/sample/${encodeURIComponent(dbName)}/${encodeURIComponent(collectionName)}`);
+}
+
+export async function suggestMapping(dbName, primaryCollection, secondaryCollection) {
+  return request('POST', '/suggest-mapping', {
+    db_name: dbName,
+    primary_collection: primaryCollection,
+    secondary_collection: secondaryCollection || null,
+  });
+}
+
+export async function checkJoin(dbName, primaryCollection, secondaryCollection, localKey, foreignKey) {
+  return request('POST', '/check-join', {
+    db_name: dbName,
+    primary_collection: primaryCollection,
+    secondary_collection: secondaryCollection,
+    local_key: localKey,
+    foreign_key: foreignKey,
+  });
+}
+
 export async function findUsers(prompt) {
   return request('POST', '/find-users', { prompt });
 }
@@ -27,17 +65,6 @@ export async function getDispatchHistory() {
   return request('GET', '/dispatch-history');
 }
 
-/*
-  Poll-based progress for dispatches.
-  Calls onProgress with partial results until complete.
-*/
-export async function pollDispatchProgress(dispatchId, onProgress) {
-  const poll = async () => {
-    const data = await request('GET', `/dispatch-progress/${dispatchId}`);
-    onProgress(data);
-    if (data.status === 'complete' || data.status === 'failed') return data;
-    await new Promise((r) => setTimeout(r, 1000));
-    return poll();
-  };
-  return poll();
+export async function sendChatMessage(message, history) {
+  return request('POST', '/chat', { message, history });
 }
