@@ -6,26 +6,21 @@ import TemplatePreview from './components/TemplatePreview';
 import SendProgress from './components/SendProgress';
 import DispatchSummary from './components/DispatchSummary';
 import DispatchHistory from './components/DispatchHistory';
+import ChatView from './components/ChatView';
+import SetupView from './components/SetupView';
 import { TableSkeleton, TemplateSkeleton } from './components/Skeletons';
-import { findUsers, approveDispatch, getDispatchHistory } from './api';
-
-/*
-  Flow stages:
-  'idle'      → prompt input centered, history below
-  'searching' → skeleton loaders
-  'matched'   → show users + template preview + approval
-  'sending'   → progress view
-  'complete'  → summary view
-  'error'     → error message
-*/
+import { findUsers, approveDispatch, getDispatchHistory, getSettings } from './api';
 
 export default function App() {
+  const [view, setView] = useState('loading');
+  const [mode, setMode] = useState('chat');
+  const [settings, setSettings] = useState(null);
+
   const [stage, setStage] = useState('idle');
   const [status, setStatus] = useState('idle');
   const [prompt, setPrompt] = useState('');
   const [error, setError] = useState(null);
 
-  // Data
   const [matchedUsers, setMatchedUsers] = useState([]);
   const [template, setTemplate] = useState(null);
   const [dispatchId, setDispatchId] = useState(null);
@@ -35,11 +30,26 @@ export default function App() {
   const [dispatchResult, setDispatchResult] = useState(null);
   const [history, setHistory] = useState([]);
 
-  // Load history on mount
   useEffect(() => {
-    getDispatchHistory()
-      .then(setHistory)
-      .catch(() => {});
+    getSettings()
+      .then((s) => {
+        setSettings(s);
+        setView(s.setup_complete ? 'main' : 'setup');
+      })
+      .catch(() => setView('setup'));
+  }, []);
+
+  useEffect(() => {
+    if (view === 'main') {
+      getDispatchHistory().then(setHistory).catch(() => {});
+    }
+  }, [view]);
+
+  const handleSetupComplete = useCallback(() => {
+    getSettings().then((s) => {
+      setSettings(s);
+      setView('main');
+    });
   }, []);
 
   const resetFlow = useCallback(() => {
@@ -54,10 +64,7 @@ export default function App() {
     setSendSent(0);
     setSendFailed(0);
     setDispatchResult(null);
-    // Refresh history
-    getDispatchHistory()
-      .then(setHistory)
-      .catch(() => {});
+    getDispatchHistory().then(setHistory).catch(() => {});
   }, []);
 
   const handleSubmit = useCallback(async (userPrompt) => {
@@ -76,7 +83,6 @@ export default function App() {
         return;
       }
 
-      // Process users — normalize minutesListened
       const users = data.users.map((u, i) => ({
         ...u,
         rank: i + 1,
@@ -106,10 +112,8 @@ export default function App() {
     try {
       const data = await approveDispatch(dispatchId);
 
-      // The backend might return results all at once
       if (data.results) {
         const results = data.results;
-        // Simulate staggered arrival for better UX
         for (let i = 0; i < results.length; i++) {
           await new Promise((r) => setTimeout(r, 120));
           setSendResults((prev) => [...prev, results[i]]);
@@ -130,7 +134,6 @@ export default function App() {
         }
       );
 
-      // Brief pause before showing summary
       await new Promise((r) => setTimeout(r, 600));
       setStage('complete');
       setStatus('idle');
@@ -153,90 +156,113 @@ export default function App() {
     setStatus('idle');
   }, [matchedUsers]);
 
+  if (view === 'loading') {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <div className="flex items-center gap-2 text-text-tertiary">
+          <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          <span className="text-sm">Connecting...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'setup' || view === 'settings') {
+    return (
+      <div className="min-h-screen bg-surface">
+        <TopBar
+          status="idle"
+          productName={settings?.product_name}
+          onSettingsClick={view === 'settings' ? () => setView('main') : undefined}
+        />
+        <main className="pt-20">
+          <SetupView
+            existingSettings={settings}
+            onComplete={handleSetupComplete}
+          />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface">
-      <TopBar status={status} />
+      <TopBar
+        status={status}
+        mode={mode}
+        onModeChange={(m) => { setMode(m); if (m === 'mail') resetFlow(); }}
+        onSettingsClick={() => setView('settings')}
+        productName={settings?.product_name}
+      />
 
-      <main className="pt-20 pb-16 px-6">
-        <div
-          className={`flex flex-col items-center transition-all duration-500 ease-out ${
-            stage === 'idle' ? 'justify-center min-h-[calc(100vh-10rem)]' : 'mt-8'
-          }`}
-        >
-          {/* Prompt input — always visible during idle/searching, collapses after */}
-          {(stage === 'idle' || stage === 'searching') && (
-            <div
-              className={`w-full transition-all duration-500 ${
-                stage === 'idle' ? 'mb-0' : 'mb-10'
-              }`}
-            >
-              <PromptInput
-                onSubmit={handleSubmit}
-                isLoading={stage === 'searching'}
-              />
-            </div>
-          )}
+      <main className="pt-16">
+        {mode === 'chat' && <ChatView />}
 
-          {/* Error */}
-          {error && stage === 'idle' && (
-            <div className="w-full max-w-2xl mx-auto mt-6 animate-in">
-              <div className="rounded-xl border border-error/20 bg-error/5 px-5 py-4">
-                <p className="text-sm text-error">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Searching skeleton */}
-          {stage === 'searching' && (
-            <div className="w-full space-y-8">
-              <TableSkeleton />
-              <TemplateSkeleton />
-            </div>
-          )}
-
-          {/* Matched users + template */}
-          {stage === 'matched' && (
-            <div className="w-full space-y-8 animate-in">
-              {/* Prompt echo */}
-              <div className="w-full max-w-2xl mx-auto">
-                <div className="rounded-xl bg-surface-raised border border-border px-5 py-3">
-                  <p className="text-sm text-text-secondary">{prompt}</p>
+        {mode === 'mail' && (
+          <div className="pb-16 px-6">
+            <div className={`flex flex-col items-center transition-all duration-500 ease-out ${
+              stage === 'idle' ? 'justify-center min-h-[calc(100vh-10rem)] pt-0' : 'mt-8'
+            }`}>
+              {(stage === 'idle' || stage === 'searching') && (
+                <div className={`w-full transition-all duration-500 ${
+                  stage === 'idle' ? 'mb-0' : 'mb-10'
+                }`}>
+                  <PromptInput onSubmit={handleSubmit} isLoading={stage === 'searching'} />
                 </div>
-              </div>
-              <MatchedUsersTable users={matchedUsers} prompt={prompt} />
-              <TemplatePreview
-                template={template}
-                onApprove={handleApprove}
-                onReject={handleReject}
-              />
-            </div>
-          )}
+              )}
 
-          {/* Sending */}
-          {stage === 'sending' && (
-            <div className="w-full animate-in">
-              <SendProgress
-                results={sendResults}
-                total={matchedUsers.length}
-                sent={sendSent}
-                failed={sendFailed}
-              />
-            </div>
-          )}
+              {error && stage === 'idle' && (
+                <div className="w-full max-w-2xl mx-auto mt-6 animate-in">
+                  <div className="rounded-xl border border-error/20 bg-error/5 px-5 py-4">
+                    <p className="text-sm text-error">{error}</p>
+                  </div>
+                </div>
+              )}
 
-          {/* Complete */}
-          {stage === 'complete' && (
-            <div className="w-full animate-in">
-              <DispatchSummary
-                result={dispatchResult}
-                onNewDispatch={resetFlow}
-              />
-            </div>
-          )}
+              {stage === 'searching' && (
+                <div className="w-full space-y-8">
+                  <TableSkeleton />
+                  <TemplateSkeleton />
+                </div>
+              )}
 
-          {/* History — visible when idle */}
-          {stage === 'idle' && <DispatchHistory dispatches={history} />}
-        </div>
+              {stage === 'matched' && (
+                <div className="w-full space-y-8 animate-in">
+                  <div className="w-full max-w-2xl mx-auto">
+                    <div className="rounded-xl bg-surface-raised border border-border px-5 py-3">
+                      <p className="text-sm text-text-secondary">{prompt}</p>
+                    </div>
+                  </div>
+                  <MatchedUsersTable users={matchedUsers} prompt={prompt} />
+                  <TemplatePreview
+                    template={template}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                  />
+                </div>
+              )}
+
+              {stage === 'sending' && (
+                <div className="w-full animate-in">
+                  <SendProgress
+                    results={sendResults}
+                    total={matchedUsers.length}
+                    sent={sendSent}
+                    failed={sendFailed}
+                  />
+                </div>
+              )}
+
+              {stage === 'complete' && (
+                <div className="w-full animate-in">
+                  <DispatchSummary result={dispatchResult} onNewDispatch={resetFlow} />
+                </div>
+              )}
+
+              {stage === 'idle' && <DispatchHistory dispatches={history} />}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
