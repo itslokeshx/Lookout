@@ -382,6 +382,29 @@ pipeline.append({
 
 ---
 
+## 📊 Testing & Benchmarks
+
+LookOut has been validated against a real production workload using the **SoulSync** streaming platform. The objective was to measure reliability, personalization quality, and end-to-end campaign execution under realistic conditions.
+
+### Mass Announcement Campaign Benchmark
+*   **Campaign Prompt:** *"Mail every Gmail user informing them that SoulSync Wrapper is now available."*
+*   **Users Matched:** 101 users
+*   **Total Dispatch Time:** 94.75 seconds (~0.93s average per email)
+*   **Failed Requests / Delivery Success:** 0 failures (100% SMTP API acceptance)
+
+### Functional Validation & Reliability
+*   **ReadOnly Protection:** Zero database write operations were performed during discovery; user targeting remains strictly read-only.
+*   **Safety Check:** Every campaign requires explicit human review and approval before any dispatch actions are taken.
+*   **Feature Verification:** Dynamic MongoDB query retrieval (✅), custom key joins (✅), personalized draft generation (✅), and Brevo SMTP dispatch (✅) all validated successfully.
+
+### System Configuration
+*   **Tested Dataset:** 101 users
+*   **Database:** MongoDB Atlas
+*   **LLM Provider:** GPT-OSS-120B (Cerebras)
+*   **Email Provider:** Brevo Transactional Email API
+
+---
+
 ## 🤝 Contributing & Open Source
 
 LookOut is fully open-source and we welcome contributors of all skill levels! Whether you want to fix a bug, optimize the agent's prompts, add support for more database types, or build integrations for other email providers, your help is highly appreciated.
