@@ -20,7 +20,7 @@
 
 ## 🚀 Overview
 
-**LookOut** is an autonomous AI agent system designed to interactively explore, query, and campaign over multi-collection databases. Built for founders, developers, and product teams, it allows you to connect *any* MongoDB database, specify relationships between collections, query records in plain English, and autonomously dispatch targeted HTML email campaigns.
+**LookOut** is an autonomous AI agent system designed to interactively explore, query, and campaign over multi-collection databases. Built for founders, developers, and product teams, it allows you to connect *any* MongoDB database (currently, LookOut only supports MongoDB), specify relationships between collections, query records in plain English, and autonomously dispatch targeted HTML email campaigns.
 
 Instead of writing SQL queries, building custom MongoDB aggregation pipelines, or designing HTML emails, you describe your target audience and intent directly in natural language:
 
@@ -32,7 +32,7 @@ Instead of writing SQL queries, building custom MongoDB aggregation pipelines, o
 
 ## ✨ Features (v2 Completed)
 
-- **Bring Your Own Database (BYODB):** Connect any MongoDB cluster and choose collections dynamically.
+- **Bring Your Own Database (BYODB):** Connect any MongoDB cluster and choose collections dynamically (currently, LookOut exclusively supports MongoDB).
 - **Dynamic Multi-Collection Joins:** 
   - Supports **one-to-one** and **one-to-many** relationships.
   - Employs a robust sub-pipeline `$lookup` (with sorting and `$limit: 1`) to eliminate row duplication issues while retaining enriched records.
