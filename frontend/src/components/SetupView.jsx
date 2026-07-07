@@ -275,12 +275,31 @@ export default function SetupView({ existingSettings, onComplete }) {
     }
   };
 
+  const buildSchemaPreviewJson = () => {
+    const preview = {};
+    if (fieldMapping.email) preview["email"] = `user.${fieldMapping.email} (e.g. "alex@domain.com")`;
+    if (fieldMapping.name) preview["name"] = `user.${fieldMapping.name} (e.g. "Alex")`;
+    if (fieldMapping.joined_date) preview["joined_date"] = `user.${fieldMapping.joined_date} (e.g. "2026-07-08")`;
+    if (fieldMapping.last_active) preview["last_active"] = `user.${fieldMapping.last_active} (e.g. "2026-07-08")`;
+
+    customFields.forEach(cf => {
+      if (cf.field?.trim()) {
+        const key = cf.field.trim();
+        const label = cf.label?.trim() || key;
+        const unit = cf.unit?.trim() ? ` in ${cf.unit.trim()}` : '';
+        preview[key] = `user.${key} (Label: "${label}"${unit})`;
+      }
+    });
+
+    return JSON.stringify(preview, null, 2);
+  };
+
   const canProceedStep0 = dbName && collectionName && (numCollections === 1 || (enrichment.collection && enrichment.local_key && enrichment.foreign_key));
   const canProceedStep1 = fieldMapping.name || fieldMapping.email;
   const canProceedStep2 = senderName && senderEmail;
 
   return (
-    <div className="max-w-xl mx-auto pt-8 pb-16 px-6 animate-slide-up">
+    <div className="max-w-5xl mx-auto pt-8 pb-16 px-6 animate-slide-up">
       <div className="mb-6 flex justify-between items-start">
         <div>
           <h1 className="text-lg font-semibold text-text-primary">
@@ -391,10 +410,13 @@ export default function SetupView({ existingSettings, onComplete }) {
 
           {numCollections === 2 && enrichment.collection && (
             <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
-              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Join Configuration</span>
+              <div>
+                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Join Configuration</span>
+                <p className="text-[11px] text-text-tertiary mt-1">Choose the fields that connect your two collections (usually a shared identifier like "username" or "userId").</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={primaryFieldNames} placeholder="Select key" />
-                <SelectField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} options={secondaryFieldNames} placeholder="Select key" />
+                <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={primaryFieldNames} placeholder="Select key" helper="The key in your Primary collection (e.g. username)" />
+                <SelectField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} options={secondaryFieldNames} placeholder="Select key" helper="The matching key in your Secondary collection" />
               </div>
               {enrichment.reason && (
                 <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
@@ -402,24 +424,34 @@ export default function SetupView({ existingSettings, onComplete }) {
                 </div>
               )}
               {enrichment.local_key && enrichment.foreign_key && (
-                <button type="button" onClick={handleCheckJoin} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface border border-border text-text-secondary hover:bg-surface-hover transition-all duration-150 cursor-pointer">
+                <button type="button" onClick={handleCheckJoin} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-border text-text-secondary hover:bg-surface-hover transition-all duration-150 cursor-pointer">
                   {loading ? <Loader2 size={12} className="animate-spin" /> : null}
                   Check relationship
                 </button>
               )}
               {joinCheckResult && (
-                <div className={`rounded-lg border px-3 py-2 ${
-                  joinCheckResult.relationship === 'one-to-many'
-                    ? 'border-warning/30 bg-warning/5'
-                    : 'border-success/30 bg-success/5'
+                <div className={`rounded-lg border px-3 py-2.5 ${
+                  joinCheckResult.match_count === 0
+                    ? 'border-error/20 bg-error/5'
+                    : joinCheckResult.relationship === 'one-to-many'
+                      ? 'border-warning/30 bg-warning/5'
+                      : 'border-success/30 bg-success/5'
                 }`}>
                   <div className="flex items-center gap-1.5 mb-1">
-                    {joinCheckResult.relationship === 'one-to-many' && <AlertTriangle size={12} className="text-warning" />}
-                    <span className={`text-xs font-medium ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`}>
-                      {joinCheckResult.relationship} ({joinCheckResult.match_count} matches for sample value)
-                    </span>
+                    {joinCheckResult.match_count === 0 ? (
+                      <span className="text-xs font-semibold text-error">
+                        ⚠️ Connection Check: 0 matches. Ensure both keys contain matching values (e.g., both are usernames).
+                      </span>
+                    ) : (
+                      <>
+                        {joinCheckResult.relationship === 'one-to-many' && <AlertTriangle size={12} className="text-warning" />}
+                        <span className={`text-xs font-semibold ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`}>
+                          ✓ Connected Successfully! Found {joinCheckResult.match_count} match(es) for sample record ({joinCheckResult.relationship}).
+                        </span>
+                      </>
+                    )}
                   </div>
-                  {joinCheckResult.relationship === 'one-to-many' && (
+                  {joinCheckResult.match_count > 0 && joinCheckResult.relationship === 'one-to-many' && (
                     <div className="mt-2 space-y-2">
                       <p className="text-xs text-text-tertiary">Multiple matches found. Choose a resolution strategy:</p>
                       <InputField label="Sort Field" value={enrichment.sort_field || ''} onChange={(v) => setEnrichment({ ...enrichment, sort_field: v })} placeholder="e.g. createdAt" helper="Use the most recent record by this field." />
@@ -441,113 +473,130 @@ export default function SetupView({ existingSettings, onComplete }) {
       )}
 
       {step === 1 && (
-        <div className="space-y-6 animate-slide-up">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-sm font-semibold text-text-primary">Field Mapping</span>
-              <p className="text-xs text-text-tertiary mt-0.5">Assign attributes, metrics, or custom properties to database fields.</p>
-            </div>
-            <button
-              onClick={handleSuggest}
-              disabled={suggestionLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent-muted text-accent hover:bg-accent/20 transition-all duration-150 disabled:opacity-50 cursor-pointer"
-            >
-              {suggestionLoading ? <Loader2 size={12} className="animate-spin" /> : null}
-              {suggestionLoading ? 'Analyzing...' : 'Auto-suggest'}
-            </button>
-          </div>
-
-          {suggestionApplied && (
-            <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2.5 flex items-start gap-2">
-              <Check size={14} className="text-accent mt-0.5 shrink-0" />
-              <p className="text-xs text-accent">
-                AI suggestion applied. Review and adjust mappings below.
-              </p>
-            </div>
-          )}
-
-          {/* Core Mappings (Email, Name, Join Date, Last Active) */}
-          <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
-            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Core Mappings</span>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField label="Email Field" value={fieldMapping.email} onChange={(v) => setFieldMapping({ ...fieldMapping, email: v })} options={fieldNames} placeholder="None" />
-              <SelectField label="Name Field" value={fieldMapping.name} onChange={(v) => setFieldMapping({ ...fieldMapping, name: v })} options={fieldNames} placeholder="None" />
-              <SelectField label="Join Date Field" value={fieldMapping.joined_date} onChange={(v) => setFieldMapping({ ...fieldMapping, joined_date: v })} options={fieldNames} placeholder="None" />
-              <SelectField label="Last Active Field" value={fieldMapping.last_active} onChange={(v) => setFieldMapping({ ...fieldMapping, last_active: v })} options={fieldNames} placeholder="None" />
-            </div>
-          </div>
-
-          {/* Unified Custom Fields and Metrics */}
-          <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
-            <div className="flex items-center justify-between border-b border-border/60 pb-2">
-              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                Additional Fields & Metrics
-              </span>
-            </div>
-
-            {/* Column Headers */}
-            <div className="grid grid-cols-12 gap-3 px-2 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider">
-              <div className="col-span-5">Database Field</div>
-              <div className="col-span-4">Display Label</div>
-              <div className="col-span-2">Unit</div>
-              <div className="col-span-1"></div>
-            </div>
-
-            <div className="space-y-3">
-              {customFields.map((cf, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-surface border border-border rounded-xl p-2.5 transition-all hover:border-border-strong/50">
-                  <div className="col-span-5">
-                    <select
-                      value={cf.field}
-                      onChange={(e) => handleCustomFieldChange(idx, 'field', e.target.value)}
-                      className="w-full bg-surface-raised border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong focus:bg-surface-hover appearance-none cursor-pointer"
-                    >
-                      <option value="">None</option>
-                      {fieldNames.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-4">
-                    <input
-                      type="text"
-                      value={cf.label}
-                      onChange={(e) => handleCustomFieldChange(idx, 'label', e.target.value)}
-                      placeholder="e.g. Listened Time"
-                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <input
-                      type="text"
-                      value={cf.unit}
-                      onChange={(e) => handleCustomFieldChange(idx, 'unit', e.target.value)}
-                      placeholder="e.g. sec"
-                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong"
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => removeCustomField(idx)}
-                      className="text-text-tertiary hover:text-error transition-colors p-1.5 cursor-pointer"
-                      title="Clear or remove field"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-slide-up">
+          {/* Left Column: Mappings form */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-semibold text-text-primary">Field Mapping</span>
+                <p className="text-xs text-text-tertiary mt-0.5">Assign attributes, metrics, or custom properties to database fields.</p>
+              </div>
               <button
                 type="button"
-                onClick={addCustomField}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-border hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer text-text-secondary"
+                onClick={handleSuggest}
+                disabled={suggestionLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent-muted text-accent hover:bg-accent/20 transition-all duration-150 disabled:opacity-50 cursor-pointer"
               >
-                <Plus size={13} /> More Fields
+                {suggestionLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+                {suggestionLoading ? 'Analyzing...' : 'Auto-suggest'}
               </button>
+            </div>
+
+            {suggestionApplied && (
+              <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2.5 flex items-start gap-2">
+                <Check size={14} className="text-accent mt-0.5 shrink-0" />
+                <p className="text-xs text-accent">
+                  AI suggestion applied. Review and adjust mappings below.
+                </p>
+              </div>
+            )}
+
+            {/* Core Mappings (Email, Name, Join Date, Last Active) */}
+            <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Core Mappings</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectField label="Email Field" value={fieldMapping.email} onChange={(v) => setFieldMapping({ ...fieldMapping, email: v })} options={fieldNames} placeholder="None" />
+                <SelectField label="Name Field" value={fieldMapping.name} onChange={(v) => setFieldMapping({ ...fieldMapping, name: v })} options={fieldNames} placeholder="None" />
+                <SelectField label="Join Date Field" value={fieldMapping.joined_date} onChange={(v) => setFieldMapping({ ...fieldMapping, joined_date: v })} options={fieldNames} placeholder="None" />
+                <SelectField label="Last Active Field" value={fieldMapping.last_active} onChange={(v) => setFieldMapping({ ...fieldMapping, last_active: v })} options={fieldNames} placeholder="None" />
+              </div>
+            </div>
+
+            {/* Unified Custom Fields and Metrics */}
+            <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
+              <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                  Additional Fields & Metrics
+                </span>
+              </div>
+
+              {/* Column Headers */}
+              <div className="grid grid-cols-12 gap-3 px-2 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider">
+                <div className="col-span-5">Database Field</div>
+                <div className="col-span-4">Display Label</div>
+                <div className="col-span-2">Unit</div>
+                <div className="col-span-1"></div>
+              </div>
+
+              <div className="space-y-3">
+                {customFields.map((cf, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-surface border border-border rounded-xl p-2.5 transition-all hover:border-border-strong/50">
+                    <div className="col-span-5">
+                      <select
+                        value={cf.field}
+                        onChange={(e) => handleCustomFieldChange(idx, 'field', e.target.value)}
+                        className="w-full bg-surface-raised border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong focus:bg-surface-hover appearance-none cursor-pointer"
+                      >
+                        <option value="">None</option>
+                        {fieldNames.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-4">
+                      <input
+                        type="text"
+                        value={cf.label}
+                        onChange={(e) => handleCustomFieldChange(idx, 'label', e.target.value)}
+                        placeholder="e.g. Listened Time"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        value={cf.unit}
+                        onChange={(e) => handleCustomFieldChange(idx, 'unit', e.target.value)}
+                        placeholder="e.g. sec"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-all duration-200 focus:border-border-strong"
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => removeCustomField(idx)}
+                        className="text-text-tertiary hover:text-error transition-colors p-1.5 cursor-pointer"
+                        title="Clear or remove field"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-start">
+                <button
+                  type="button"
+                  onClick={addCustomField}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-border hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer text-text-secondary"
+                >
+                  <Plus size={13} /> More Fields
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Schema Preview */}
+          <div className="lg:col-span-5">
+            <div className="bg-surface-raised border border-border rounded-xl p-4 sticky top-6 space-y-4">
+              <div>
+                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Lookout Data Schema Preview</span>
+                <p className="text-[11px] text-text-tertiary mt-1">This is the structure the Lookout agent will query and view.</p>
+              </div>
+              <pre className="bg-[#121214] text-accent border border-border/80 rounded-lg p-3 text-xs font-mono overflow-auto max-h-[400px] leading-relaxed select-all">
+                {buildSchemaPreviewJson()}
+              </pre>
             </div>
           </div>
         </div>
