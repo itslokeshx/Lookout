@@ -59,6 +59,7 @@ class SaveSettingsRequest(BaseModel):
     collection_name: str
     field_mapping: dict
     metrics: list[dict] = Field(default_factory=list)
+    extra_fields: list[str] = Field(default_factory=list)
     sender_name: str = ""
     sender_email: str = ""
     product_name: str = ""
@@ -92,6 +93,7 @@ async def update_settings(req: SaveSettingsRequest):
         collection_name=req.collection_name,
         field_mapping=FieldMapping(**req.field_mapping),
         metrics=[MetricField(**m) for m in req.metrics if m.get("field", "").strip()],
+        extra_fields=[f for f in req.extra_fields if f.strip()],
         sender_name=req.sender_name,
         sender_email=req.sender_email,
         product_name=req.product_name,

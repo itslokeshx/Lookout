@@ -26,6 +26,7 @@ class JoinSuggestion(BaseModel):
 class MappingSuggestion(BaseModel):
     fields: FieldSuggestion
     metrics: list[MetricSuggestion] = Field(default_factory=list)
+    extra_fields: list[str] = Field(default_factory=list, description="Categorical or details fields (e.g. authProvider, role, status) to project")
     join: JoinSuggestion | None = None
 
 
@@ -50,6 +51,7 @@ def suggest_field_mapping(
         "3. Which field (if any) represents when the user joined / account was created",
         "4. Which field (if any) represents last activity",
         "5. Any numeric fields that could serve as engagement metrics (exclude _id and internal fields)",
+        "6. Any other important categorical or informational fields (e.g. authProvider, status, role, group) useful for filtering users.",
     ]
 
     if secondary_sample:
@@ -59,7 +61,7 @@ def suggest_field_mapping(
             "Secondary collection sample document fields:",
             secondary_fields,
             "",
-            "6. Identify the most likely join key between the two collections and explain why.",
+            "7. Identify the most likely join key between the two collections and explain why.",
         ])
 
     return structured_llm.invoke("\n".join(prompt_parts))
