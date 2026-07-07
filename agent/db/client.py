@@ -1,6 +1,27 @@
 from pymongo import MongoClient
 
-from agent.config import MONGODB_URI, DB_NAME, COLLECTION_NAME
+from agent.config import MONGODB_URI
+from agent.config_store import load_settings
 
-client = MongoClient(MONGODB_URI)
-users_collection = client[DB_NAME][COLLECTION_NAME]
+_client: MongoClient | None = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = MongoClient(MONGODB_URI)
+    return _client
+
+
+def get_users_collection():
+    settings = load_settings()
+    if not settings.db_name or not settings.collection_name:
+        raise RuntimeError("Lookout is not configured. Complete setup first.")
+    return _get_client()[settings.db_name][settings.collection_name]
+
+
+def get_collection(db_name: str, collection_name: str):
+    return _get_client()[db_name][collection_name]
+
+
+users_collection = property(lambda self: get_users_collection())
