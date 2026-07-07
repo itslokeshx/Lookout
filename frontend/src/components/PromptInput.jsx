@@ -60,7 +60,7 @@ export default function PromptInput({ onSubmit, isLoading = false }) {
         </button>
       </div>
       <p className="text-center text-xs text-text-tertiary mt-3">
-        Describe the users you want to reach — Lookout will find them and draft a campaign.
+        Describe who you want to reach — Lookout will find them and draft a campaign.
       </p>
     </div>
   );
