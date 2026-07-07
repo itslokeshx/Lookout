@@ -2,6 +2,67 @@ import { useState, useRef, useEffect } from 'react';
 import { ArrowUp, Loader2 } from 'lucide-react';
 import { sendChatMessage } from '../api';
 
+function FormattedMessage({ content }) {
+  if (!content) return null;
+  const lines = content.split('\n');
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, lineIdx) => {
+        const isListItem = line.trim().startsWith('* ') || line.trim().startsWith('- ');
+        const cleanLine = isListItem ? line.trim().substring(2) : line;
+        const parts = [];
+        let index = 0;
+        const regex = /(\*\*.*?\*\*|`.*?`)/g;
+        const matches = [...cleanLine.matchAll(regex)];
+
+        if (matches.length === 0) {
+          parts.push(cleanLine);
+        } else {
+          matches.forEach((match) => {
+            const matchIndex = match.index;
+            const matchText = match[0];
+            if (matchIndex > index) {
+              parts.push(cleanLine.substring(index, matchIndex));
+            }
+            if (matchText.startsWith('**') && matchText.endsWith('**')) {
+              parts.push(
+                <strong key={matchIndex} className="font-semibold text-text-primary">
+                  {matchText.slice(2, -2)}
+                </strong>
+              );
+            } else if (matchText.startsWith('`') && matchText.endsWith('`')) {
+              parts.push(
+                <code key={matchIndex} className="font-mono text-xs bg-surface border border-border px-1 py-0.5 rounded text-accent">
+                  {matchText.slice(1, -1)}
+                </code>
+              );
+            }
+            index = matchIndex + matchText.length;
+          });
+          if (index < cleanLine.length) {
+            parts.push(cleanLine.substring(index));
+          }
+        }
+
+        if (isListItem) {
+          return (
+            <div key={lineIdx} className="flex items-start gap-2 ml-2 my-1">
+              <span className="w-1 h-1 rounded-full bg-accent mt-2 flex-shrink-0" />
+              <span className="text-text-secondary text-sm leading-relaxed">{parts}</span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={lineIdx} className="text-text-secondary text-sm leading-relaxed min-h-[1rem]">
+            {parts}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ChatView() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -90,7 +151,11 @@ export default function ChatView() {
                       : 'bg-surface-raised border border-border text-text-secondary chat-bubble-agent'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                  {msg.role === 'user' ? (
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  ) : (
+                    <FormattedMessage content={msg.content} />
+                  )}
                 </div>
               </div>
             ))}

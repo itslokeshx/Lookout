@@ -17,7 +17,7 @@ export default function App() {
   const [settings, setSettings] = useState(null);
 
   const [stage, setStage] = useState('idle');
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState('connected');
   const [prompt, setPrompt] = useState('');
   const [error, setError] = useState(null);
 
@@ -35,8 +35,12 @@ export default function App() {
       .then((s) => {
         setSettings(s);
         setView(s.setup_complete ? 'main' : 'setup');
+        setStatus('connected');
       })
-      .catch(() => setView('setup'));
+      .catch(() => {
+        setView('setup');
+        setStatus('disconnected');
+      });
   }, []);
 
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function App() {
 
   const resetFlow = useCallback(() => {
     setStage('idle');
-    setStatus('idle');
+    setStatus('connected');
     setPrompt('');
     setError(null);
     setMatchedUsers([]);
@@ -91,7 +95,7 @@ export default function App() {
 
       if (!data.users || data.users.length === 0) {
         setStage('idle');
-        setStatus('idle');
+        setStatus('connected');
         setError('No users matched your query. Try a different prompt.');
         return;
       }
@@ -107,11 +111,11 @@ export default function App() {
       setTemplate(data.template || null);
       setDispatchId(data.dispatch_id || null);
       setStage('matched');
-      setStatus('idle');
+      setStatus('connected');
     } catch (err) {
       setError(err.message || 'Failed to find users.');
       setStage('idle');
-      setStatus('idle');
+      setStatus('connected');
     }
   }, []);
 
@@ -149,11 +153,11 @@ export default function App() {
 
       await new Promise((r) => setTimeout(r, 600));
       setStage('complete');
-      setStatus('idle');
+      setStatus('connected');
     } catch (err) {
       setError(err.message || 'Failed to dispatch campaign.');
       setStage('idle');
-      setStatus('idle');
+      setStatus('connected');
     }
   }, [dispatchId, matchedUsers]);
 
@@ -166,7 +170,7 @@ export default function App() {
       duration: 0,
     });
     setStage('complete');
-    setStatus('idle');
+    setStatus('connected');
   }, [matchedUsers]);
 
   if (view === 'loading') {
