@@ -25,6 +25,9 @@ def _build_projection():
     for metric in settings.metrics:
         if metric.field:
             projection[metric.field] = 1
+    for extra in settings.extra_fields:
+        if extra:
+            projection[extra] = 1
     return projection
 
 

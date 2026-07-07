@@ -181,7 +181,7 @@ export default function SetupView({ existingSettings, onComplete }) {
         db_name: dbName,
         collection_name: collectionName,
         field_mapping: fieldMapping,
-        metrics,
+        metrics: metrics.filter((m) => m.field && m.field.trim()),
         sender_name: senderName,
         sender_email: senderEmail,
         product_name: productName,

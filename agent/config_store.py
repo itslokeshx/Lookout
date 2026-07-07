@@ -35,6 +35,7 @@ class LookoutSettings(BaseModel):
     collection_name: str = ""
     field_mapping: FieldMapping = Field(default_factory=FieldMapping)
     metrics: list[MetricField] = Field(default_factory=list)
+    extra_fields: list[str] = Field(default_factory=list)
     sender_name: str = ""
     sender_email: str = ""
     enrichment: JoinConfig | None = None

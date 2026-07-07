@@ -45,6 +45,10 @@ export default function App() {
     }
   }, [view]);
 
+  useEffect(() => {
+    localStorage.setItem('lookout_mode', mode);
+  }, [mode]);
+
   const handleSetupComplete = useCallback(() => {
     getSettings().then((s) => {
       setSettings(s);
