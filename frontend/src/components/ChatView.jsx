@@ -64,11 +64,26 @@ function FormattedMessage({ content }) {
 }
 
 export default function ChatView() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lookout_chat_messages');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('lookout_chat_messages', JSON.stringify(messages));
+    } catch (e) {
+      console.error('Failed to save chat messages', e);
+    }
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
