@@ -126,9 +126,7 @@ export default function SetupView({ existingSettings, onComplete }) {
   const [joinCheckResult, setJoinCheckResult] = useState(null);
 
   // Dynamic Steps
-  const STEPS = numCollections === 2 
-    ? ['Database', 'Fields', 'Sender', 'Enrichment']
-    : ['Database', 'Fields', 'Sender'];
+  const STEPS = ['Database', 'Fields', 'Sender'];
 
   useEffect(() => {
     getDatabases().then((d) => setDatabases(d.databases)).catch(() => {});
@@ -141,12 +139,38 @@ export default function SetupView({ existingSettings, onComplete }) {
   }, [dbName]);
 
   useEffect(() => {
-    if (dbName && collectionName) {
-      getSample(dbName, collectionName).then((d) => {
-        setSampleFields(d.fields || []);
-      }).catch(() => {});
-    }
-  }, [dbName, collectionName]);
+    let active = true;
+    const fetchFields = async () => {
+      if (!dbName || !collectionName) {
+        if (active) setSampleFields([]);
+        return;
+      }
+      try {
+        const primaryRes = await getSample(dbName, collectionName);
+        if (!active) return;
+        let fieldsList = primaryRes.fields || [];
+
+        if (numCollections === 2 && enrichment.collection) {
+          const secondaryRes = await getSample(dbName, enrichment.collection);
+          if (!active) return;
+          const secondaryFields = secondaryRes.fields || [];
+          secondaryFields.forEach((sf) => {
+            if (!fieldsList.some((pf) => pf.name === sf.name)) {
+              fieldsList.push(sf);
+            }
+          });
+        }
+        setSampleFields(fieldsList);
+      } catch (err) {
+        console.error("Error fetching fields:", err);
+      }
+    };
+
+    fetchFields();
+    return () => {
+      active = false;
+    };
+  }, [dbName, collectionName, numCollections, enrichment.collection]);
 
   const fieldNames = sampleFields.map((f) => f.name);
 
@@ -258,7 +282,7 @@ export default function SetupView({ existingSettings, onComplete }) {
     }
   };
 
-  const canProceedStep0 = dbName && collectionName && (numCollections === 1 || enrichment.collection);
+  const canProceedStep0 = dbName && collectionName && (numCollections === 1 || (enrichment.collection && enrichment.local_key && enrichment.foreign_key));
   const canProceedStep1 = fieldMapping.name || fieldMapping.email;
   const canProceedStep2 = senderName && senderEmail;
 
@@ -368,6 +392,47 @@ export default function SetupView({ existingSettings, onComplete }) {
                   options={collections.filter(c => c !== collectionName)}
                   placeholder="Select secondary collection"
                 />
+              )}
+            </div>
+          )}
+
+          {numCollections === 2 && enrichment.collection && (
+            <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Join Configuration</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={fieldNames} placeholder="Select key" />
+                <InputField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} placeholder="e.g. userId" />
+              </div>
+              {enrichment.reason && (
+                <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
+                  <p className="text-xs text-accent">AI suggestion: {enrichment.reason}</p>
+                </div>
+              )}
+              {enrichment.local_key && enrichment.foreign_key && (
+                <button type="button" onClick={handleCheckJoin} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface border border-border text-text-secondary hover:bg-surface-hover transition-all duration-150 cursor-pointer">
+                  {loading ? <Loader2 size={12} className="animate-spin" /> : null}
+                  Check relationship
+                </button>
+              )}
+              {joinCheckResult && (
+                <div className={`rounded-lg border px-3 py-2 ${
+                  joinCheckResult.relationship === 'one-to-many'
+                    ? 'border-warning/30 bg-warning/5'
+                    : 'border-success/30 bg-success/5'
+                }`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    {joinCheckResult.relationship === 'one-to-many' && <AlertTriangle size={12} className="text-warning" />}
+                    <span className={`text-xs font-medium ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`}>
+                      {joinCheckResult.relationship} ({joinCheckResult.match_count} matches for sample value)
+                    </span>
+                  </div>
+                  {joinCheckResult.relationship === 'one-to-many' && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-xs text-text-tertiary">Multiple matches found. Choose a resolution strategy:</p>
+                      <InputField label="Sort Field" value={enrichment.sort_field || ''} onChange={(v) => setEnrichment({ ...enrichment, sort_field: v })} placeholder="e.g. createdAt" helper="Use the most recent record by this field." />
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -503,46 +568,7 @@ export default function SetupView({ existingSettings, onComplete }) {
         </div>
       )}
 
-      {step === 3 && numCollections === 2 && (
-        <div className="space-y-5 animate-slide-up">
-          <span className="text-sm font-medium text-text-primary block mb-2">Enrichment / Relationship Config</span>
-          <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={fieldNames} placeholder="Select key" />
-          {enrichment.collection && (
-            <InputField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} placeholder="e.g. userId" />
-          )}
-          {enrichment.reason && (
-            <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
-              <p className="text-xs text-accent">AI suggestion: {enrichment.reason}</p>
-            </div>
-          )}
-          {enrichment.local_key && enrichment.foreign_key && (
-            <button onClick={handleCheckJoin} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-raised border border-border text-text-secondary hover:bg-surface-hover transition-all duration-150 cursor-pointer">
-              {loading ? <Loader2 size={12} className="animate-spin" /> : null}
-              Check relationship
-            </button>
-          )}
-          {joinCheckResult && (
-            <div className={`rounded-lg border px-3 py-2 ${
-              joinCheckResult.relationship === 'one-to-many'
-                ? 'border-warning/30 bg-warning/5'
-                : 'border-success/30 bg-success/5'
-            }`}>
-              <div className="flex items-center gap-1.5 mb-1">
-                {joinCheckResult.relationship === 'one-to-many' && <AlertTriangle size={12} className="text-warning" />}
-                <span className={`text-xs font-medium ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`}>
-                  {joinCheckResult.relationship} ({joinCheckResult.match_count} matches for sample value)
-                </span>
-              </div>
-              {joinCheckResult.relationship === 'one-to-many' && (
-                <div className="mt-2 space-y-2">
-                  <p className="text-xs text-text-tertiary">Multiple matches found. Choose a resolution strategy:</p>
-                  <InputField label="Sort Field" value={enrichment.sort_field || ''} onChange={(v) => setEnrichment({ ...enrichment, sort_field: v })} placeholder="e.g. createdAt" helper="Use the most recent record by this field." />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+
 
       <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
         {step > 0 ? (

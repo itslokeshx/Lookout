@@ -91,15 +91,50 @@ def find_users(
             else:
                 query[k] = v
 
-    cursor = collection.find(query, projection)
-
-    if sort_by:
-        cursor = cursor.sort(sort_by, -1 if not ascending else 1)
-
-    if limit is None or limit <= 0:
-        limit = 10000
-
-    cursor = cursor.limit(limit)
+    settings = load_settings()
+    if settings.enrichment and settings.enrichment.collection:
+        pipeline = []
+        pipeline.append({
+            "$lookup": {
+                "from": settings.enrichment.collection,
+                "localField": settings.enrichment.local_key,
+                "foreignField": settings.enrichment.foreign_key,
+                "as": "_enrichment_docs"
+            }
+        })
+        pipeline.append({
+            "$unwind": {
+                "path": "$_enrichment_docs",
+                "preserveNullAndEmptyArrays": True
+            }
+        })
+        pipeline.append({
+            "$replaceRoot": {
+                "newRoot": {
+                    "$mergeObjects": [
+                        "$$ROOT",
+                        {"$ifNull": ["$_enrichment_docs", {}]}
+                    ]
+                }
+            }
+        })
+        if query:
+            pipeline.append({"$match": query})
+        if sort_by:
+            pipeline.append({"$sort": {sort_by: -1 if not ascending else 1}})
+        if projection:
+            pipeline.append({"$project": projection})
+        if limit is None or limit <= 0:
+            limit = 10000
+        pipeline.append({"$limit": limit})
+        cursor = collection.aggregate(pipeline)
+    else:
+        cursor = collection.find(query, projection)
+        if sort_by:
+            cursor = cursor.sort(sort_by, -1 if not ascending else 1)
+        if limit is None or limit <= 0:
+            limit = 10000
+        cursor = cursor.limit(limit)
 
     def serialize(user):
         return {
