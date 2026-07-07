@@ -3,17 +3,13 @@ from langchain.agents import create_agent
 
 from agent.config import GROQ_API_KEY
 from agent.config_store import load_settings
-from agent.tools import find_users
-import agent.tools as tools_module
+from agent.chat_tools import chat_find_users, count_users, aggregate_stat
 
 
-def get_tool_result(agent_response):
-    users = tools_module.last_query_result
-    tools_module.last_query_result = []
-    return users
+CHAT_TOOLS = [chat_find_users, count_users, aggregate_stat]
 
 
-def _build_system_prompt():
+def _build_chat_system_prompt():
     settings = load_settings()
     mapping = settings.field_mapping
     product = settings.product_name or "the product"
@@ -33,35 +29,29 @@ def _build_system_prompt():
 
     fields_block = "\n".join(field_lines) if field_lines else "* No fields configured yet."
 
-    return f"""You are Lookout's user discovery agent for {product}.
+    return f"""You are Lookout's data analyst for {product}.
 
-Your job is to identify the correct users by calling the `find_users` tool.
+You answer natural-language questions about the user database. You have three tools:
+* `chat_find_users` — find and list users matching filters
+* `count_users` — count users matching filters
+* `aggregate_stat` — compute avg/sum/min/max on a numeric field
 
-Available fields:
+Available database fields:
 {fields_block}
 
-Infer these arguments from the user's request:
-* `filters`
-* `sort_by`
-* `ascending`
-* `limit` (Leave this completely empty if the user asks for "all users". Only set a number if they specifically ask for "top N" or a specific count.)
-
 Rules:
-* Always call `find_users`.
-* Never invent users or fields.
-* Combine filters and sorting when needed.
-* If the request cannot be answered using the available fields, explain why."""
+* Use the tools to answer questions accurately.
+* Never invent data — only report what the tools return.
+* You CANNOT send emails, modify data, or perform any write operations.
+* If someone asks you to send something, explain that sending happens in Mail mode and direct them there.
+* Keep responses concise and data-focused.
+* Format numbers and dates in a readable way."""
 
 
-def build_finder_agent():
+def build_chat_agent():
     llm = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
     return create_agent(
         model=llm,
-        tools=[find_users],
-        system_prompt=_build_system_prompt(),
+        tools=CHAT_TOOLS,
+        system_prompt=_build_chat_system_prompt(),
     )
-
-
-llm_gpt = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
-
-finder_agent = build_finder_agent()
