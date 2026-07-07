@@ -5,7 +5,7 @@ export default function TopBar({ status = 'idle', mode, onModeChange, onSettings
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-surface/80 backdrop-blur-xl border-b border-border">
       <div className="flex items-center gap-3">
         <span className="text-base font-semibold tracking-tight text-text-primary">
-          Lookout
+          LookOut
         </span>
         {productName && (
           <span className="text-xs text-text-tertiary font-medium tracking-wide uppercase">

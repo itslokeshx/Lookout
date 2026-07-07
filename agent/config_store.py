@@ -30,7 +30,7 @@ class FieldMapping(BaseModel):
     last_active: str = ""
 
 
-class LookoutSettings(BaseModel):
+class LookOutSettings(BaseModel):
     db_name: str = ""
     collection_name: str = ""
     field_mapping: FieldMapping = Field(default_factory=FieldMapping)
@@ -69,12 +69,12 @@ import os
 SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "settings.json")
 
 
-def load_settings() -> LookoutSettings:
+def load_settings() -> LookOutSettings:
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, "r") as f:
                 data = json.load(f)
-            return LookoutSettings(**data)
+            return LookOutSettings(**data)
         except Exception:
             pass
 
@@ -96,14 +96,14 @@ def load_settings() -> LookoutSettings:
                         json.dump(doc, f, indent=2)
                 except Exception:
                     pass
-                return LookoutSettings(**doc)
+                return LookOutSettings(**doc)
     except Exception:
         pass
 
-    return LookoutSettings()
+    return LookOutSettings()
 
 
-def save_settings(settings: LookoutSettings):
+def save_settings(settings: LookOutSettings):
     try:
         with open(SETTINGS_FILE, "w") as f:
             json.dump(settings.model_dump(), f, indent=2)

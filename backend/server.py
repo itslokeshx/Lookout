@@ -18,7 +18,7 @@ from agent.config_store import (
     list_collections,
     get_sample_document,
     check_join_relationship,
-    LookoutSettings,
+    LookOutSettings,
     FieldMapping,
     MetricField,
     JoinConfig,
@@ -28,7 +28,7 @@ from agent.config_store import (
 )
 from agent.field_mapper import suggest_field_mapping
 
-app = FastAPI(title="Lookout API", version="2.0.0")
+app = FastAPI(title="LookOut API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -88,7 +88,7 @@ async def get_settings():
 
 @app.post("/api/settings")
 async def update_settings(req: SaveSettingsRequest):
-    settings = LookoutSettings(
+    settings = LookOutSettings(
         db_name=req.db_name,
         collection_name=req.collection_name,
         field_mapping=FieldMapping(**req.field_mapping),

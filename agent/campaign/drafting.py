@@ -43,7 +43,7 @@ def renderTemplate(template: EmailTemplate, user: dict) -> EmailDraft:
 
 def to_html(draft: EmailDraft) -> str:
     settings = load_settings()
-    product = settings.product_name or "Lookout"
+    product = settings.product_name or "LookOut"
 
     paragraphs = []
     for line in draft.body.split("\n"):

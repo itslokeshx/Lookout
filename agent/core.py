@@ -40,7 +40,7 @@ def _build_system_prompt():
     import datetime
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    return f"""You are Lookout's user discovery agent for {product}.
+    return f"""You are LookOut's user discovery agent for {product}.
 Current time (UTC): {now_str}.
 Use this current date/time to resolve relative date queries (e.g. "today", "yesterday", "last 24 hours", "this week").
 

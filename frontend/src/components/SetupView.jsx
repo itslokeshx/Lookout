@@ -308,7 +308,7 @@ export default function SetupView({ existingSettings, onComplete }) {
           <p className="text-sm text-text-tertiary mt-1">
             {existingSettings?.setup_complete
               ? 'Update your database connection, field mappings, and sender details.'
-              : 'Connect your database and configure Lookout for your product.'}
+              : 'Connect your database and configure LookOut for your product.'}
           </p>
         </div>
       </div>
@@ -591,8 +591,8 @@ export default function SetupView({ existingSettings, onComplete }) {
           <div className="lg:col-span-5">
             <div className="bg-surface-raised border border-border rounded-xl p-4 sticky top-6 space-y-4">
               <div>
-                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Lookout Data Schema Preview</span>
-                <p className="text-[11px] text-text-tertiary mt-1">This is the structure the Lookout agent will query and view.</p>
+                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">LookOut Data Schema Preview</span>
+                <p className="text-[11px] text-text-tertiary mt-1">This is the structure the LookOut agent will query and view.</p>
               </div>
               <pre className="bg-[#121214] text-accent border border-border/80 rounded-lg p-3 text-xs font-mono overflow-auto max-h-[400px] leading-relaxed select-all">
                 {buildSchemaPreviewJson()}

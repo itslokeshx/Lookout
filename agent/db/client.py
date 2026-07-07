@@ -16,7 +16,7 @@ def _get_client():
 def get_users_collection():
     settings = load_settings()
     if not settings.db_name or not settings.collection_name:
-        raise RuntimeError("Lookout is not configured. Complete setup first.")
+        raise RuntimeError("LookOut is not configured. Complete setup first.")
     return _get_client()[settings.db_name][settings.collection_name]
 
 
