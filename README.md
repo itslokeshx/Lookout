@@ -6,6 +6,8 @@
 
 *State your campaign goals in plain English. Let the discovery and drafting agents do the work.*
 
+> **📢 Notice: This is Lookout v1.** This version was built as a tailored orchestrator for a specific platform (SoulSync). We are actively designing **Lookout v2**, which will be a fully customizable, general-purpose SaaS product where *anyone* can plug in their own database and API keys! See the [Roadmap](#️-roadmap-v1-vs-v2) below.
+
 ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
 ![Tailwind](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
@@ -27,6 +29,21 @@ Instead of writing SQL queries, building custom MongoDB aggregation pipelines, o
 > *"mail to the users 3 their names is alice,bob,charlie as welcome to soulsync"*
 
 The new **Lookout Dashboard** provides a beautiful, dark-themed React UI to manage this process visually, while maintaining the powerful, lightning-fast Python CLI for terminal power users.
+
+---
+
+## 🗺️ Roadmap: v1 vs v2
+
+**Lookout v1 (Current State)**
+- Built and tailored for a specific platform's schema (SoulSync).
+- Pre-configured for specific database structures and fields (like `totalListeningTime`, `authProvider`).
+- Serves as a specialized internal tool/proof-of-concept.
+
+**Lookout v2 (Upcoming - The Product Version)**
+- **Bring Your Own Database (BYODB):** Seamlessly connect *any* MongoDB database (and eventually Postgres/MySQL).
+- **Dynamic Schema Intelligence:** The AI will automatically map and understand your unique database schema—no hardcoding required.
+- **Plug-and-Play API Keys:** A smooth onboarding UI for users to supply their own LLM keys (Groq/OpenAI) and Email Provider keys (Brevo/SendGrid).
+- **Universal Availability:** Transformed into a real, generalized product designed for *any* founder, creator, or developer to run autonomous campaigns on their own user data.
 
 ---
 
