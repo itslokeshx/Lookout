@@ -28,6 +28,10 @@ Instead of writing SQL queries, building custom MongoDB aggregation pipelines, o
 > *"List the messages sent by users who are using Gmail."*  
 > *"Mail the top 5 users by listenedTime to announce our new feature."*
 
+LookOut operates in two distinct modes:
+- **💬 Chat Mode (Database Analytics):** Ask natural-language questions about your users, collection metrics, or joined tables. LookOut automatically queries your database and displays summary counts, averages, and formatted records.
+- **✉️ Mail Mode (Campaign Orchestration):** Describe your target audience in plain English, dynamically generate personalized email templates, preview the dynamic HTML rendered versions, and securely dispatch transactional email campaigns.
+
 ---
 
 ## ✨ Features
@@ -242,6 +246,25 @@ Configure which attributes represent identities, metrics, and additional context
 Configure the SMTP sending identity used when dispatching campaigns:
 * **Sender Name & Sender Email:** Define the default name and email address that recipients will see in campaign dispatches.
 * **Save / Complete Setup:** Compiles the configuration, writes it to `settings.json`, syncs it to MongoDB Atlas under `_lookout_config` for cloud redundancy, and unlocks the Chat & Mail dashboards.
+
+---
+
+## 🎮 Dashboard Interface Modes
+
+LookOut's dashboard features a dual-mode workflow switcher designed for both interactive exploration and structured workflow orchestration:
+
+### 💬 Chat Mode: The Conversational Database Analyst
+Chat Mode is a read-only playground designed for dynamic data exploration:
+* **Interactive Tooling:** The underlying agent is equipped with five query tools (`chat_find_users`, `count_users`, `aggregate_stat`, `count_secondary_documents`, `find_secondary_documents`) to pull counts, run statistics, filter, and inspect collection schemas.
+* **Scope Guardrails:** Safe prompt filters prevent off-topic trivia abuse (e.g. queries about cricket players, celebrities, or unrelated math). If a general-knowledge prompt is detected, the agent replies with a brief statement and pivots the conversation back to your user database.
+* **Smart UI Rendering:** Displays database records, totals, average metrics, and join relationship tables formatted cleanly.
+
+### ✉️ Mail Mode: The Campaign Orchestration Pipeline
+Mail Mode guides you through a strict four-stage wizard to discover users, draft personalized emails, and send SMTP dispatches:
+1. **Targeting:** Describe your target audience in plain English (e.g., *"users who joined in the last 30 days and have 0 messages"*). The agent dynamically builds filters and returns the matching user count and details.
+2. **Template Generation:** The agent automatically drafts a personalized email campaign (Subject & Body copy) tailored to the audience context.
+3. **Review & Preview:** Browse through individual preview cards of your matching users. LookOut dynamically renders the exact HTML output showing how dynamic placeholder values (such as `{username}` or custom metrics) are safely injected for each recipient.
+4. **SMTP Dispatch:** Runs transactional email delivery using the configured Brevo SMTP details. You can monitor progress with a live status bar showing successful/failed dispatches, with results saved to your local **Dispatch History**.
 
 ---
 
