@@ -118,10 +118,35 @@ def aggregate_stat(
     return f"The {operation} of '{field}' across {count} users is {value}."
 
 
+import datetime
+
+def _parse_dates(val):
+    if isinstance(val, dict):
+        return {k: _parse_dates(v) for k, v in val.items()}
+    elif isinstance(val, list):
+        return [_parse_dates(x) for x in val]
+    elif isinstance(val, str):
+        # Try parsing as ISO format datetime
+        s = val
+        if s.endswith('Z'):
+            s = s[:-1] + '+00:00'
+        # Heuristic for YYYY-MM-DD or full ISO datetime string
+        if len(s) >= 10 and s[4] == '-' and s[7] == '-' and s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit():
+            try:
+                return datetime.datetime.fromisoformat(s)
+            except ValueError:
+                try:
+                    return datetime.datetime.strptime(s[:10], "%Y-%m-%d")
+                except ValueError:
+                    pass
+    return val
+
+
 def _build_query(filters: dict | None) -> dict:
     if not filters:
         return {}
 
+    filters = _parse_dates(filters)
     query = {}
     for k, v in filters.items():
         if isinstance(v, list):
@@ -139,6 +164,8 @@ def _build_query(filters: dict | None) -> dict:
                 query[k] = v
         elif isinstance(v, str):
             query[k] = re.compile(re.escape(v), re.IGNORECASE)
+        elif isinstance(v, datetime.datetime):
+            query[k] = v
         else:
             query[k] = v
     return query

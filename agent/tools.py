@@ -31,6 +31,28 @@ def _build_projection():
     return projection
 
 
+import datetime
+
+def _parse_dates(val):
+    if isinstance(val, dict):
+        return {k: _parse_dates(v) for k, v in val.items()}
+    elif isinstance(val, list):
+        return [_parse_dates(x) for x in val]
+    elif isinstance(val, str):
+        s = val
+        if s.endswith('Z'):
+            s = s[:-1] + '+00:00'
+        if len(s) >= 10 and s[4] == '-' and s[7] == '-' and s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit():
+            try:
+                return datetime.datetime.fromisoformat(s)
+            except ValueError:
+                try:
+                    return datetime.datetime.strptime(s[:10], "%Y-%m-%d")
+                except ValueError:
+                    pass
+    return val
+
+
 @tool
 def find_users(
     filters: dict | None = None,
@@ -47,6 +69,7 @@ def find_users(
 
     query = {}
     if filters:
+        filters = _parse_dates(filters)
         for k, v in filters.items():
             if isinstance(v, list):
                 if all(isinstance(x, str) for x in v):
@@ -63,6 +86,8 @@ def find_users(
                     query[k] = v
             elif isinstance(v, str):
                 query[k] = re.compile(re.escape(v), re.IGNORECASE)
+            elif isinstance(v, datetime.datetime):
+                query[k] = v
             else:
                 query[k] = v
 

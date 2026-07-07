@@ -37,7 +37,12 @@ def _build_system_prompt():
 
     fields_block = "\n".join(field_lines) if field_lines else "* No fields configured yet."
 
+    import datetime
+    now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     return f"""You are Lookout's user discovery agent for {product}.
+Current time (UTC): {now_str}.
+Use this current date/time to resolve relative date queries (e.g. "today", "yesterday", "last 24 hours", "this week").
 
 Your job is to identify the correct users by calling the `find_users` tool.
 
