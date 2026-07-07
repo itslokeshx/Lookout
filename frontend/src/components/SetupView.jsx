@@ -221,7 +221,7 @@ export default function SetupView({ existingSettings, onComplete }) {
   };
 
   const canProceedStep0 = dbName && collectionName && (numCollections === 1 || enrichment.collection);
-  const canProceedStep1 = fieldMapping.email && fieldMapping.name;
+  const canProceedStep1 = fieldMapping.name || fieldMapping.email;
   const canProceedStep2 = senderName && senderEmail;
 
   return (
@@ -369,10 +369,10 @@ export default function SetupView({ existingSettings, onComplete }) {
           <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
             <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Core Mappings</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField label="Email Field" value={fieldMapping.email} onChange={(v) => setFieldMapping({ ...fieldMapping, email: v })} options={fieldNames} placeholder="Select field" />
-              <SelectField label="Name Field" value={fieldMapping.name} onChange={(v) => setFieldMapping({ ...fieldMapping, name: v })} options={fieldNames} placeholder="Select field" />
-              <SelectField label="Join Date Field" value={fieldMapping.joined_date} onChange={(v) => setFieldMapping({ ...fieldMapping, joined_date: v })} options={['', ...fieldNames]} placeholder="None" />
-              <SelectField label="Last Active Field" value={fieldMapping.last_active} onChange={(v) => setFieldMapping({ ...fieldMapping, last_active: v })} options={['', ...fieldNames]} placeholder="None" />
+              <SelectField label="Email Field" value={fieldMapping.email} onChange={(v) => setFieldMapping({ ...fieldMapping, email: v })} options={fieldNames} placeholder="None" />
+              <SelectField label="Name Field" value={fieldMapping.name} onChange={(v) => setFieldMapping({ ...fieldMapping, name: v })} options={fieldNames} placeholder="None" />
+              <SelectField label="Join Date Field" value={fieldMapping.joined_date} onChange={(v) => setFieldMapping({ ...fieldMapping, joined_date: v })} options={fieldNames} placeholder="None" />
+              <SelectField label="Last Active Field" value={fieldMapping.last_active} onChange={(v) => setFieldMapping({ ...fieldMapping, last_active: v })} options={fieldNames} placeholder="None" />
             </div>
           </div>
 
