@@ -278,6 +278,11 @@ BREVO_API_KEY=xkeysib-your_brevo_key_here
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
 ```
 
+> [!TIP]
+> **LLM Model Recommendations (Free Tier):**
+> * **`openai/gpt-oss-120b`** — Default production model
+> * **`llama-3.3-70b-versatile`** — Quality + lower cost option
+
 ### Step 4: Install Frontend Dependencies
 ```bash
 cd frontend
