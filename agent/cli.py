@@ -2,7 +2,8 @@ import time
 
 from langchain_core.messages import HumanMessage
 
-from agent import finder_agent, sendMail, get_tool_result
+from agent.core import build_finder_agent, get_tool_result
+from agent.tools import sendMail
 from agent.campaign import DispatchedResult, generate_template, renderTemplate, to_html
 from agent.ui import Spinner, banner, show_template, show_recipients, ask_approval
 from agent.ui import show_send_result, show_aborted, show_no_match, show_summary, prompt_input, ask_loop
@@ -11,8 +12,9 @@ from agent.ui import show_send_result, show_aborted, show_no_match, show_summary
 def run_dispatch(user_prompt: str):
     start = time.time()
 
+    agent = build_finder_agent()
     with Spinner("Searching for users..."):
-        response = finder_agent.invoke({"messages": [HumanMessage(content=user_prompt)]})
+        response = agent.invoke({"messages": [HumanMessage(content=user_prompt)]})
         matched_users = get_tool_result(response)
 
     if not matched_users:

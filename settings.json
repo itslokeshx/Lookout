@@ -1,0 +1,33 @@
+{
+  "db_name": "Chatty",
+  "collection_name": "userdetails",
+  "field_mapping": {
+    "email": "",
+    "name": "username",
+    "joined_date": "",
+    "last_active": ""
+  },
+  "metrics": [
+    {
+      "field": "text",
+      "label": "Messages",
+      "unit": ""
+    }
+  ],
+  "extra_fields": [
+    "text"
+  ],
+  "sender_name": "Chatty",
+  "sender_email": "lokeshvijayraina@gmail.com",
+  "enrichment": {
+    "collection": "messages",
+    "local_key": "username",
+    "foreign_key": "username",
+    "relationship": "one-to-many",
+    "sort_field": null,
+    "sort_ascending": false,
+    "reason": ""
+  },
+  "product_name": "Chatty",
+  "setup_complete": true
+}

@@ -1,15 +1,56 @@
-import json
 import re
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from langchain_core.tools import tool
 
-import threading
-
-from agent.config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
-from agent.db.client import users_collection
+from agent.config import BREVO_API_KEY
+from agent.config_store import load_settings
+from agent.db.client import get_users_collection
 
 last_query_result = []
+
+
+def _build_projection():
+    settings = load_settings()
+    mapping = settings.field_mapping
+    projection = {"_id": 0}
+    if mapping.email:
+        projection[mapping.email] = 1
+    if mapping.name:
+        projection[mapping.name] = 1
+    if mapping.joined_date:
+        projection[mapping.joined_date] = 1
+    if mapping.last_active:
+        projection[mapping.last_active] = 1
+    for metric in settings.metrics:
+        if metric.field:
+            projection[metric.field] = 1
+    for extra in settings.extra_fields:
+        if extra:
+            projection[extra] = 1
+    return projection
+
+
+import datetime
+
+def _parse_dates(val):
+    if isinstance(val, dict):
+        return {k: _parse_dates(v) for k, v in val.items()}
+    elif isinstance(val, list):
+        return [_parse_dates(x) for x in val]
+    elif isinstance(val, str):
+        s = val
+        if s.endswith('Z'):
+            s = s[:-1] + '+00:00'
+        if len(s) >= 10 and s[4] == '-' and s[7] == '-' and s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit():
+            try:
+                return datetime.datetime.fromisoformat(s)
+            except ValueError:
+                try:
+                    return datetime.datetime.strptime(s[:10], "%Y-%m-%d")
+                except ValueError:
+                    pass
+    return val
 
 
 @tool
@@ -20,19 +61,15 @@ def find_users(
     limit: int | None = 200,
 ):
     """
-    Query SoulSync users with optional filters, sorting, and limit.
-
-    Available fields:
-    - name
-    - email
-    - authProvider
-    - totalListeningTime
-    - updatedAt (last active)
-    - createdAt (joined date)
+    Query users with optional filters, sorting, and limit.
+    Returns a summary string. The actual user data is stored in memory for the backend to retrieve.
     """
+    collection = get_users_collection()
+    projection = _build_projection()
 
     query = {}
     if filters:
+        filters = _parse_dates(filters)
         for k, v in filters.items():
             if isinstance(v, list):
                 if all(isinstance(x, str) for x in v):
@@ -49,54 +86,84 @@ def find_users(
                     query[k] = v
             elif isinstance(v, str):
                 query[k] = re.compile(re.escape(v), re.IGNORECASE)
+            elif isinstance(v, datetime.datetime):
+                query[k] = v
             else:
                 query[k] = v
 
-    targeted_users = users_collection.find(
-        query,
-        {
-            "_id": 0,
-            "name": 1,
-            "email": 1,
-            "totalListeningTime": 1,
-            "updatedAt": 1,
-            "createdAt": 1,
-            "authProvider": 1,
-        },
-    )
+    settings = load_settings()
+    if settings.enrichment and settings.enrichment.collection:
+        pipeline = []
+        lookup_pipeline = [
+            {"$match": {"$expr": {"$eq": [f"${settings.enrichment.foreign_key}", "$$local_val"]}}}
+        ]
+        if settings.enrichment.sort_field:
+            sort_dir = -1 if not settings.enrichment.sort_ascending else 1
+            lookup_pipeline.append({"$sort": {settings.enrichment.sort_field: sort_dir}})
+        lookup_pipeline.append({"$limit": 1})
 
-    if sort_by:
-        targeted_users = targeted_users.sort(
-            sort_by,
-            -1 if not ascending else 1,
-        )
-
-    if limit is None or limit <= 0:
-        limit = 10000
-    
-    targeted_users = targeted_users.limit(limit)
+        pipeline.append({
+            "$lookup": {
+                "from": settings.enrichment.collection,
+                "let": {"local_val": f"${settings.enrichment.local_key}"},
+                "pipeline": lookup_pipeline,
+                "as": "_enrichment_docs"
+            }
+        })
+        pipeline.append({
+            "$unwind": {
+                "path": "$_enrichment_docs",
+                "preserveNullAndEmptyArrays": True
+            }
+        })
+        pipeline.append({
+            "$replaceRoot": {
+                "newRoot": {
+                    "$mergeObjects": [
+                        "$$ROOT",
+                        {"$ifNull": ["$_enrichment_docs", {}]}
+                    ]
+                }
+            }
+        })
+        if query:
+            pipeline.append({"$match": query})
+        if sort_by:
+            pipeline.append({"$sort": {sort_by: -1 if not ascending else 1}})
+        if projection:
+            pipeline.append({"$project": projection})
+        if limit is None or limit <= 0:
+            limit = 10000
+        pipeline.append({"$limit": limit})
+        cursor = collection.aggregate(pipeline)
+    else:
+        cursor = collection.find(query, projection)
+        if sort_by:
+            cursor = cursor.sort(sort_by, -1 if not ascending else 1)
+        if limit is None or limit <= 0:
+            limit = 10000
+        cursor = cursor.limit(limit)
 
     def serialize(user):
         return {
-            k: (v.isoformat() if hasattr(v, "isoformat") else v)
+            k: (v.isoformat() if hasattr(v, "isoformat") else str(v) if hasattr(v, "binary") else v)
             for k, v in user.items()
         }
 
     global last_query_result
-    serialized_users = [serialize(u) for u in targeted_users]
+    serialized_users = [serialize(u) for u in cursor]
     last_query_result = serialized_users
 
     return f"Successfully found {len(serialized_users)} users matching the criteria."
 
 
-@tool
-def sendMail(receiver: str, subject: str, body: str) -> str:
-    """Send an approved email using Brevo."""
+def _send_email(receiver: str, subject: str, body: str) -> str:
+    settings = load_settings()
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key["api-key"] = BREVO_API_KEY
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-        sender={"name": SENDER_NAME, "email": SENDER_MAIL},
+        sender={"name": settings.sender_name, "email": settings.sender_email},
         to=[{"email": receiver}],
         subject=subject,
         html_content=body,
@@ -106,3 +173,9 @@ def sendMail(receiver: str, subject: str, body: str) -> str:
         return f"Sent to {receiver} (id: {api_response.message_id})"
     except ApiException as e:
         return f"Failed: {e}"
+
+
+@tool
+def sendMail(receiver: str, subject: str, body: str) -> str:
+    """Send an approved email using Brevo."""
+    return _send_email(receiver, subject, body)

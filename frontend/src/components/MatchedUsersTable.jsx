@@ -1,11 +1,14 @@
 import { Users } from 'lucide-react';
 
-export default function MatchedUsersTable({ users = [], prompt = '' }) {
+export default function MatchedUsersTable({ users = [], prompt = '', settings = null }) {
   if (!users.length) return null;
 
-  // Determine which columns to show based on available data
-  const hasMinutes = users.some((u) => u.minutesListened !== undefined);
-  const hasJoinDate = users.some((u) => u.joinDate || u.createdAt);
+  const nameField = settings?.field_mapping?.name || 'name';
+  const emailField = settings?.field_mapping?.email || 'email';
+  const joinedField = settings?.field_mapping?.joined_date || 'createdAt';
+  const metrics = settings?.metrics || [];
+
+  const hasJoinDate = users.some((u) => u[joinedField] !== undefined || u.joinDate || u.createdAt);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -17,15 +20,18 @@ export default function MatchedUsersTable({ users = [], prompt = '' }) {
     });
   };
 
-  const formatMinutes = (m) => {
-    if (m === undefined || m === null) return '—';
-    if (m >= 60) return `${(m / 60).toFixed(1)}h`;
-    return `${m}m`;
+  const formatMetricValue = (val, unit) => {
+    if (val === undefined || val === null) return '—';
+    if ((unit === 'seconds' || unit === 'sec' || unit === 's') && typeof val === 'number') {
+      const mins = Math.round(val / 60);
+      if (mins >= 60) return `${(mins / 60).toFixed(1)}h`;
+      return `${mins}m`;
+    }
+    return `${val}${unit ? ` ${unit}` : ''}`;
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto animate-in">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="flex items-center justify-center w-6 h-6 rounded-md bg-accent-muted">
           <Users size={13} className="text-accent" />
@@ -38,7 +44,6 @@ export default function MatchedUsersTable({ users = [], prompt = '' }) {
         </span>
       </div>
 
-      {/* Table */}
       <div className="rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
@@ -52,11 +57,11 @@ export default function MatchedUsersTable({ users = [], prompt = '' }) {
               <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
                 Email
               </th>
-              {hasMinutes && (
-                <th className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                  Listened
+              {metrics.map((m) => (
+                <th key={m.field} className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+                  {m.label || m.field}
                 </th>
-              )}
+              ))}
               {hasJoinDate && (
                 <th className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
                   Joined
@@ -67,26 +72,26 @@ export default function MatchedUsersTable({ users = [], prompt = '' }) {
           <tbody>
             {users.map((user, i) => (
               <tr
-                key={user.email || i}
+                key={user[emailField] || i}
                 className="border-b border-border last:border-b-0 transition-colors duration-150 hover:bg-surface-hover"
               >
                 <td className="py-3 px-4 text-text-tertiary text-xs tabular-nums">
                   {user.rank || i + 1}
                 </td>
                 <td className="py-3 px-4 text-text-primary font-medium">
-                  {user.name || user.username || '—'}
+                  {user[nameField] || user.name || user.username || '—'}
                 </td>
                 <td className="py-3 px-4 text-text-secondary font-mono text-xs">
-                  {user.email}
+                  {user[emailField] || user.email}
                 </td>
-                {hasMinutes && (
-                  <td className="py-3 px-4 text-right text-text-secondary tabular-nums">
-                    {formatMinutes(user.minutesListened)}
+                {metrics.map((m) => (
+                  <td key={m.field} className="py-3 px-4 text-right text-text-secondary tabular-nums">
+                    {formatMetricValue(user[m.field], m.unit)}
                   </td>
-                )}
+                ))}
                 {hasJoinDate && (
                   <td className="py-3 px-4 text-right text-text-secondary text-xs">
-                    {formatDate(user.joinDate || user.createdAt)}
+                    {formatDate(user[joinedField] || user.joinDate || user.createdAt)}
                   </td>
                 )}
               </tr>
