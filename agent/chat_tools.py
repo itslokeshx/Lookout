@@ -32,6 +32,9 @@ def chat_find_users(
     for metric in settings.metrics:
         if metric.field:
             projection[metric.field] = 1
+    for extra in settings.extra_fields:
+        if extra:
+            projection[extra] = 1
 
     query = _build_query(filters)
     cursor = collection.find(query, projection)

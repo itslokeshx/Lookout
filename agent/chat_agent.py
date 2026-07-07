@@ -24,8 +24,12 @@ def _build_chat_system_prompt():
     if mapping.last_active:
         field_lines.append(f"* `{mapping.last_active}` (last active)")
     for metric in settings.metrics:
-        unit_note = f" ({metric.unit})" if metric.unit else ""
-        field_lines.append(f"* `{metric.field}` — {metric.label}{unit_note}")
+        if metric.field:
+            unit_note = f" ({metric.unit})" if metric.unit else ""
+            field_lines.append(f"* `{metric.field}` — {metric.label}{unit_note}")
+    for extra in settings.extra_fields:
+        if extra:
+            field_lines.append(f"* `{extra}`")
 
     fields_block = "\n".join(field_lines) if field_lines else "* No fields configured yet."
 
