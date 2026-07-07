@@ -39,11 +39,19 @@ def chat_find_users(
     query = _build_query(filters)
     if settings.enrichment and settings.enrichment.collection:
         pipeline = []
+        lookup_pipeline = [
+            {"$match": {"$expr": {"$eq": [f"${settings.enrichment.foreign_key}", "$$local_val"]}}}
+        ]
+        if settings.enrichment.sort_field:
+            sort_dir = -1 if not settings.enrichment.sort_ascending else 1
+            lookup_pipeline.append({"$sort": {settings.enrichment.sort_field: sort_dir}})
+        lookup_pipeline.append({"$limit": 1})
+
         pipeline.append({
             "$lookup": {
                 "from": settings.enrichment.collection,
-                "localField": settings.enrichment.local_key,
-                "foreignField": settings.enrichment.foreign_key,
+                "let": {"local_val": f"${settings.enrichment.local_key}"},
+                "pipeline": lookup_pipeline,
                 "as": "_enrichment_docs"
             }
         })
@@ -107,11 +115,19 @@ def count_users(filters: dict | None = None) -> str:
     settings = load_settings()
     if settings.enrichment and settings.enrichment.collection:
         pipeline = []
+        lookup_pipeline = [
+            {"$match": {"$expr": {"$eq": [f"${settings.enrichment.foreign_key}", "$$local_val"]}}}
+        ]
+        if settings.enrichment.sort_field:
+            sort_dir = -1 if not settings.enrichment.sort_ascending else 1
+            lookup_pipeline.append({"$sort": {settings.enrichment.sort_field: sort_dir}})
+        lookup_pipeline.append({"$limit": 1})
+
         pipeline.append({
             "$lookup": {
                 "from": settings.enrichment.collection,
-                "localField": settings.enrichment.local_key,
-                "foreignField": settings.enrichment.foreign_key,
+                "let": {"local_val": f"${settings.enrichment.local_key}"},
+                "pipeline": lookup_pipeline,
                 "as": "_enrichment_docs"
             }
         })
@@ -163,11 +179,19 @@ def aggregate_stat(
     pipeline = []
 
     if settings.enrichment and settings.enrichment.collection:
+        lookup_pipeline = [
+            {"$match": {"$expr": {"$eq": [f"${settings.enrichment.foreign_key}", "$$local_val"]}}}
+        ]
+        if settings.enrichment.sort_field:
+            sort_dir = -1 if not settings.enrichment.sort_ascending else 1
+            lookup_pipeline.append({"$sort": {settings.enrichment.sort_field: sort_dir}})
+        lookup_pipeline.append({"$limit": 1})
+
         pipeline.append({
             "$lookup": {
                 "from": settings.enrichment.collection,
-                "localField": settings.enrichment.local_key,
-                "foreignField": settings.enrichment.foreign_key,
+                "let": {"local_val": f"${settings.enrichment.local_key}"},
+                "pipeline": lookup_pipeline,
                 "as": "_enrichment_docs"
             }
         })
@@ -263,3 +287,60 @@ def _build_query(filters: dict | None) -> dict:
         else:
             query[k] = v
     return query
+
+
+@tool
+def count_secondary_documents(filters: dict | None = None) -> str:
+    """
+    Count documents in the secondary/enrichment collection (e.g. messages, logs, etc.) if configured.
+    """
+    settings = load_settings()
+    if not settings.enrichment or not settings.enrichment.collection:
+        return "No secondary collection is configured."
+
+    db = get_users_collection().database
+    collection = db[settings.enrichment.collection]
+    query = _build_query(filters)
+    count = collection.count_documents(query)
+    return f"There are {count} documents in the secondary collection '{settings.enrichment.collection}'."
+
+
+@tool
+def find_secondary_documents(
+    filters: dict | None = None,
+    sort_by: str | None = None,
+    ascending: bool | None = False,
+    limit: int | None = 50,
+) -> str:
+    """
+    Query documents in the secondary/enrichment collection (e.g. messages, logs, etc.) directly.
+    """
+    settings = load_settings()
+    if not settings.enrichment or not settings.enrichment.collection:
+        return "No secondary collection is configured."
+
+    db = get_users_collection().database
+    collection = db[settings.enrichment.collection]
+    query = _build_query(filters)
+    cursor = collection.find(query)
+
+    if sort_by:
+        cursor = cursor.sort(sort_by, -1 if not ascending else 1)
+
+    if limit is None or limit <= 0:
+        limit = 50
+    cursor = cursor.limit(limit)
+
+    def serialize(doc):
+        return {
+            k: (v.isoformat() if hasattr(v, "isoformat") else str(v) if hasattr(v, "binary") else v)
+            for k, v in doc.items()
+        }
+
+    docs = [serialize(d) for d in cursor]
+    if not docs:
+        return f"No documents found in secondary collection '{settings.enrichment.collection}' matching those criteria."
+
+    return f"Found {len(docs)} documents in '{settings.enrichment.collection}':\n" + "\n".join(
+        str(d) for d in docs
+    )

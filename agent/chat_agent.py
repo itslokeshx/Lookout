@@ -3,10 +3,22 @@ from langchain.agents import create_agent
 
 from agent.config import GROQ_API_KEY
 from agent.config_store import load_settings
-from agent.chat_tools import chat_find_users, count_users, aggregate_stat
+from agent.chat_tools import (
+    chat_find_users,
+    count_users,
+    aggregate_stat,
+    count_secondary_documents,
+    find_secondary_documents,
+)
 
 
-CHAT_TOOLS = [chat_find_users, count_users, aggregate_stat]
+CHAT_TOOLS = [
+    chat_find_users,
+    count_users,
+    aggregate_stat,
+    count_secondary_documents,
+    find_secondary_documents,
+]
 
 
 def _build_chat_system_prompt():
@@ -33,6 +45,10 @@ def _build_chat_system_prompt():
 
     fields_block = "\n".join(field_lines) if field_lines else "* No fields configured yet."
 
+    secondary_info = ""
+    if settings.enrichment and settings.enrichment.collection:
+        secondary_info = f"\nSecondary/Enrichment Collection: `{settings.enrichment.collection}` (linked to users via `{settings.enrichment.local_key}` -> `{settings.enrichment.foreign_key}`)\n"
+
     import datetime
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -40,13 +56,16 @@ def _build_chat_system_prompt():
 Current time (UTC): {now_str}.
 Use this current date/time to resolve relative date queries (e.g. "today", "yesterday", "last 24 hours", "this week").
 
-You answer natural-language questions about the user database. You have three tools:
-* `chat_find_users` — find and list users matching filters
+You answer natural-language questions about the database. You have five tools:
+* `chat_find_users` — find and list users matching filters (with joined secondary fields)
 * `count_users` — count users matching filters
 * `aggregate_stat` — compute avg/sum/min/max on a numeric field
+* `count_secondary_documents` — count raw documents in the secondary/enrichment collection (e.g. messages, logs, orders)
+* `find_secondary_documents` — find and list raw documents in the secondary/enrichment collection
 
-Available database fields:
+Available database fields (for users):
 {fields_block}
+{secondary_info}
 
 Rules:
 * Use the tools to answer questions accurately.

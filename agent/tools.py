@@ -94,11 +94,19 @@ def find_users(
     settings = load_settings()
     if settings.enrichment and settings.enrichment.collection:
         pipeline = []
+        lookup_pipeline = [
+            {"$match": {"$expr": {"$eq": [f"${settings.enrichment.foreign_key}", "$$local_val"]}}}
+        ]
+        if settings.enrichment.sort_field:
+            sort_dir = -1 if not settings.enrichment.sort_ascending else 1
+            lookup_pipeline.append({"$sort": {settings.enrichment.sort_field: sort_dir}})
+        lookup_pipeline.append({"$limit": 1})
+
         pipeline.append({
             "$lookup": {
                 "from": settings.enrichment.collection,
-                "localField": settings.enrichment.local_key,
-                "foreignField": settings.enrichment.foreign_key,
+                "let": {"local_val": f"${settings.enrichment.local_key}"},
+                "pipeline": lookup_pipeline,
                 "as": "_enrichment_docs"
             }
         })
