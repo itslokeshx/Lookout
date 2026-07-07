@@ -382,6 +382,21 @@ pipeline.append({
 
 ---
 
+## 🤝 Contributing & Open Source
+
+LookOut is fully open-source and we welcome contributors of all skill levels! Whether you want to fix a bug, optimize the agent's prompts, add support for more database types, or build integrations for other email providers, your help is highly appreciated.
+
+### How to Contribute:
+1. **Fork the Repository:** Create a copy of this project on your GitHub account.
+2. **Create a Feature Branch:** `git checkout -b feature/amazing-feature`
+3. **Commit Your Changes:** `git commit -m 'Add some amazing feature'`
+4. **Push to Branch:** `git push origin feature/amazing-feature`
+5. **Open a Pull Request:** Submit your changes for review!
+
+Feel free to open an issue if you encounter bugs or want to suggest new features. Let's make database analytics and campaigns entirely autonomous together!
+
+---
+
 ## 📄 License
 
 LookOut is open-source software licensed under the [MIT License](LICENSE).
