@@ -40,7 +40,7 @@ The new **Lookout Dashboard** provides a beautiful, dark-themed React UI to mana
 - Serves as a specialized internal tool/proof-of-concept.
 
 **Lookout v2 (Upcoming - The Product Version)**
-- **Bring Your Own Database (BYODB):** Seamlessly connect *any* MongoDB database (and eventually Postgres/MySQL).
+- **Bring Your Own Database (BYODB):** Seamlessly connect *any* MongoDB database (and eventually Postgres/MySQL). This will be achieved using specialized database agent toolkits (e.g., LangChain's MongoDB toolkit and SQL toolkit) to allow for easy, secure, and plug-and-play implementation out of the box.
 - **Dynamic Schema Intelligence:** The AI will automatically map and understand your unique database schema—no hardcoding required.
 - **Plug-and-Play API Keys:** A smooth onboarding UI for users to supply their own LLM keys (Groq/OpenAI) and Email Provider keys (Brevo/SendGrid).
 - **Universal Availability:** Transformed into a real, generalized product designed for *any* founder, creator, or developer to run autonomous campaigns on their own user data.
