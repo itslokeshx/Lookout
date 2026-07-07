@@ -12,6 +12,21 @@ import { TableSkeleton, TemplateSkeleton } from './components/Skeletons';
 import { findUsers, approveDispatch, getDispatchHistory, getSettings, clearDispatchHistory } from './api';
 
 export default function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('lookout_theme') || 'dark');
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('lookout_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  }, []);
+
   const [view, setView] = useState('loading');
   const [mode, setMode] = useState(() => localStorage.getItem('lookout_mode') || 'chat');
   const [settings, setSettings] = useState(null);
@@ -189,6 +204,8 @@ export default function App() {
       <div className="min-h-screen bg-surface">
         <TopBar
           status="idle"
+          theme={theme}
+          onThemeToggle={toggleTheme}
           productName={settings?.product_name}
           onSettingsClick={view === 'settings' ? () => setView('main') : undefined}
         />
@@ -207,6 +224,8 @@ export default function App() {
       <TopBar
         status={status}
         mode={mode}
+        theme={theme}
+        onThemeToggle={toggleTheme}
         onModeChange={(m) => { setMode(m); if (m === 'mail') resetFlow(); }}
         onSettingsClick={() => setView('settings')}
         productName={settings?.product_name}

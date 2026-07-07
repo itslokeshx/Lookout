@@ -63,33 +63,65 @@ def _get_admin_db():
     return _client
 
 
+import json
+import os
+
+SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "settings.json")
+
+
 def load_settings() -> LookoutSettings:
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, "r") as f:
+                data = json.load(f)
+            return LookoutSettings(**data)
+        except Exception:
+            pass
+
     global _client
     if _client is None:
         _client = MongoClient(MONGODB_URI)
 
-    for db_name in _client.list_database_names():
-        if db_name in ("admin", "local", "config"):
-            continue
-        coll = _client[db_name][CONFIG_COLLECTION]
-        doc = coll.find_one({"_id": CONFIG_DOC_ID})
-        if doc:
-            doc.pop("_id", None)
-            return LookoutSettings(**doc)
+    try:
+        for db_name in _client.list_database_names():
+            if db_name in ("admin", "local", "config"):
+                continue
+            coll = _client[db_name][CONFIG_COLLECTION]
+            doc = coll.find_one({"_id": CONFIG_DOC_ID})
+            if doc:
+                doc.pop("_id", None)
+                # Cache it locally
+                try:
+                    with open(SETTINGS_FILE, "w") as f:
+                        json.dump(doc, f, indent=2)
+                except Exception:
+                    pass
+                return LookoutSettings(**doc)
+    except Exception:
+        pass
 
     return LookoutSettings()
 
 
 def save_settings(settings: LookoutSettings):
-    global _client
-    if _client is None:
-        _client = MongoClient(MONGODB_URI)
+    try:
+        with open(SETTINGS_FILE, "w") as f:
+            json.dump(settings.model_dump(), f, indent=2)
+    except Exception:
+        pass
 
-    db_name = settings.db_name if settings.db_name else "lookout"
-    coll = _client[db_name][CONFIG_COLLECTION]
-    data = settings.model_dump()
-    data["_id"] = CONFIG_DOC_ID
-    coll.replace_one({"_id": CONFIG_DOC_ID}, data, upsert=True)
+    try:
+        global _client
+        if _client is None:
+            _client = MongoClient(MONGODB_URI)
+
+        db_name = settings.db_name if settings.db_name else "lookout"
+        coll = _client[db_name][CONFIG_COLLECTION]
+        data = settings.model_dump()
+        data["_id"] = CONFIG_DOC_ID
+        coll.replace_one({"_id": CONFIG_DOC_ID}, data, upsert=True)
+    except Exception:
+        pass
 
 
 def list_databases() -> list[str]:

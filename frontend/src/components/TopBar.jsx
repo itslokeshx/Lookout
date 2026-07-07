@@ -1,6 +1,6 @@
-import { Settings } from 'lucide-react';
+import { Settings, Sun, Moon } from 'lucide-react';
 
-export default function TopBar({ status = 'idle', mode, onModeChange, onSettingsClick, productName }) {
+export default function TopBar({ status = 'idle', mode, onModeChange, onSettingsClick, productName, theme, onThemeToggle }) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-surface/80 backdrop-blur-xl border-b border-border">
       <div className="flex items-center gap-3">
@@ -52,6 +52,16 @@ export default function TopBar({ status = 'idle', mode, onModeChange, onSettings
           />
           <span className="text-xs text-text-tertiary capitalize">{status}</span>
         </div>
+
+        {onThemeToggle && (
+          <button
+            onClick={onThemeToggle}
+            className="p-2 rounded-lg text-text-tertiary hover:text-text-secondary hover:bg-surface-hover transition-all duration-150 cursor-pointer"
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
+        )}
 
         {onSettingsClick && (
           <button
