@@ -152,6 +152,68 @@ Lookout/
 
 ---
 
+## 📖 Detailed Codebase Reference
+
+### 🧠 The Core Agent Layer (`agent/`)
+
+*   #### `agent/core.py`
+    Builds and initializes the campaign orchestration agent. It configures the system prompt with target database attributes and establishes a LangChain React agent using Groq. This agent exposes the `find_users` tool, which queries matched users, serializes MongoDB records safely, and stores them in a memory cache.
+*   #### `agent/chat_agent.py`
+    Defines the conversational AI data analyst. It configures the Groq model with specialized read-only query tools. The prompt features **Strict Scope Guardrails** that enforce database-centric replies and divert trivia, general knowledge, or math questions with a polite redirection.
+*   #### `agent/chat_tools.py`
+    Houses the database tools for conversational analytics:
+    *   `chat_find_users`: Performs user lookup with dynamic MongoDB `$lookup` sub-pipeline join mapping.
+    *   `count_users`: Aggregates the user count using matching search filters.
+    *   `aggregate_stat`: Calculates metric-specific math calculations (e.g. `sum`, `avg`, `min`, `max`) over selected database columns.
+    *   `find_secondary_documents` & `count_secondary_documents`: Directly inspects records in the joined enrichment collection (e.g., messages, orders, logs).
+*   #### `agent/tools.py`
+    Provides low-level implementation logic for:
+    *   `find_users`: Core MongoDB aggregation pipeline builder that executes structured search conditions.
+    *   `sendMail`: SMTP transactional mail dispatcher integrated with Brevo.
+    *   `query_cache`: Cache instance caching matched user records across campaign wizard steps.
+*   #### `agent/config_store.py`
+    Implements a **hybrid persistence system** for configurations:
+    *   Saves parameters locally into `settings.json` for instant developer access.
+    *   Synchronizes configurations to the active MongoDB cluster under the `_lookout_config` collection.
+    *   Loads settings dynamically on startup by checking both local files and cloud databases.
+    *   Implements connection testing, relationship lookups, and auto-suggest field mapping rules.
+*   #### `agent/campaign/drafting.py`
+    Wraps campaigns inside a premium responsive HTML email wrapper and implements `SafeDict` template formatting to prevent rendering errors caused by missing user attributes.
+*   #### `agent/campaign/models.py`
+    Enforces strict Pydantic v2 schemas validating configuration models (`EmailTemplate`, `EmailDraft`, and `DispatchedResult`).
+*   #### `agent/db/client.py`
+    Initializes MongoClient connections lazily and provides helper functions to resolve primary and secondary collection handlers.
+
+### 🔌 The API Wrapper Layer (`backend/`)
+
+*   #### `backend/server.py`
+    The FastAPI application serving as the integration bridge between the React frontend and the Python agent. It exposes endpoints for:
+    *   `/api/settings`: Saving and fetching setup configurations.
+    *   `/api/databases` & `/api/collections/{db}`: Discovering databases and collections.
+    *   `/api/check-join`: Validating primary/secondary key relations.
+    *   `/api/suggest-mapping`: Guessing field mappings using heuristic key match scoring.
+    *   `/api/chat`: Sending messages to the conversational agent.
+    *   `/api/campaign/target`: Invoking the campaign targeting step.
+    *   `/api/campaign/draft`: Invoking the email drafting step.
+    *   `/api/campaign/dispatch`: Dispatching emails and tracking real-time status.
+
+### 💻 The Frontend Dashboard (`frontend/`)
+
+*   #### `frontend/src/App.jsx`
+    The top-level state manager. It handles view switching (Setup wizard vs. main workspace), mode switching (Chat vs. Mail vs. Settings), and registers the light/dark theme preference inside `localStorage`.
+*   #### `frontend/src/components/SetupView.jsx`
+    A stepped onboarding form that walks users through connecting database, mapping fields with Auto-Suggest, testing joins, and configuring SMTP. Features a live schema preview panel reflecting mapped keys in real-time.
+*   #### `frontend/src/components/ChatView.jsx`
+    The conversational interface for database queries. Renders markdown responses, lists, and tables with interactive states.
+*   #### `frontend/src/components/MailView.jsx`
+    A stepped campaign orchestrator that shows targeting results, lets users edit templates, shows rendered HTML previews, and runs dispatch actions.
+*   #### `frontend/src/components/TopBar.jsx`
+    Renders status indicators, switcher tabs, theme toggling, and settings navigation.
+*   #### `frontend/src/index.css`
+    Declares custom Tailwind v4 theme configurations, custom fonts (Inter), and sets up the pitch-black and clean white color themes.
+
+---
+
 ## ⚙️ Setup and Installation
 
 Follow these steps to configure your environment and launch LookOut v2.
