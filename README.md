@@ -30,7 +30,7 @@ Instead of writing SQL queries, building custom MongoDB aggregation pipelines, o
 
 ---
 
-## ✨ Features (v2 Completed)
+## ✨ Features
 
 - **Bring Your Own Database (BYODB):** Connect any MongoDB cluster and choose collections dynamically (currently, LookOut exclusively supports MongoDB).
 - **Dynamic Multi-Collection Joins:** 
@@ -211,6 +211,37 @@ npm run dev
 ```
 
 Visit **`http://localhost:5173`** in your browser.
+
+---
+
+## 🛠️ Step-by-Step Dashboard Onboarding & Collection Mapping
+
+When you open `http://localhost:5173` for the first time, you will be guided through a 3-step setup wizard to configure the agent's target database context:
+
+### 1️⃣ Step 1: Database & Collection Join Configuration
+Configure where the agent retrieves data and how collections relate:
+* **Number of Collections:** Choose between **1 Collection** (if user details and activities are in a single place) or **2 Collections (Join / Enrichment)** (if you want the agent to enrich user records with dynamic metrics like messages, orders, or logs from a separate collection).
+* **Database:** Select from the dropdown of auto-discovered databases found on your active MongoDB cluster.
+* **Primary Collection (Users):** Select the collection that holds the core user records (typically containing `username`, `email`, etc.).
+* **Secondary Collection (Enrichment):** *(Visible only if 2 Collections is selected)* Select the collection holding relational details to join.
+* **Join Configuration (Key Mapping):**
+  - **Local Key (primary):** The identifier field in your primary collection (usually `_id` or `username`).
+  - **Foreign Key (secondary):** The key in the secondary collection that maps back to the primary collection's local key (e.g. `userId` or `username`).
+* **Check Relationship Validation:** Click this button to test the join keys instantly. The system queries a sample record and attempts to resolve a matching document. It reports exactly how many matches were found for the test value (e.g. `one-to-one (1 matches for sample value)` or warnings if 0 matches exist), ensuring your mapping is correct.
+* **Product Name:** Define your product's name (e.g., `Chatty` or `SoulSync`). This aligns the AI's agentic context and sets email template signatures.
+
+### 2️⃣ Step 2: Intelligent Field Mapping
+Configure which attributes represent identities, metrics, and additional context:
+* **Email Field & Name Field:** Select the properties that represent the user's email address and display name. If you are unsure, click **Auto-suggest** to run a heuristic matching algorithm over your collection schema.
+* **Join Date & Last Active Field:** (Optional) Map timestamps indicating when users joined and their last session activity.
+* **Numeric Metrics:** Project numeric stats that the agent can aggregate (e.g. field `totalListeningTime`, Custom Label `Listened Time`, unit `sec`). The agent uses these mappings to dynamically compute `avg`, `sum`, `min`, or `max`.
+* **Custom Extra Fields:** Input any additional schema fields you want the agent to query and view (e.g. `authProvider`, `role`, `status`, or attributes from your joined secondary collection like `text` or `count`).
+* **Live Schema Preview:** As you define mappings, the side-panel displays the exact JSON structure that the LookOut agent queries, letting you verify configurations in real-time.
+
+### 3️⃣ Step 3: Sender Configuration
+Configure the SMTP sending identity used when dispatching campaigns:
+* **Sender Name & Sender Email:** Define the default name and email address that recipients will see in campaign dispatches.
+* **Save / Complete Setup:** Compiles the configuration, writes it to `settings.json`, syncs it to MongoDB Atlas under `_lookout_config` for cloud redundancy, and unlocks the Chat & Mail dashboards.
 
 ---
 
