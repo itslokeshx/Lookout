@@ -1,15 +1,30 @@
-import json
 import re
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from langchain_core.tools import tool
 
-import threading
-
-from agent.config import BREVO_API_KEY, SENDER_NAME, SENDER_MAIL
-from agent.db.client import users_collection
+from agent.config import BREVO_API_KEY
+from agent.config_store import load_settings
+from agent.db.client import get_users_collection
 
 last_query_result = []
+
+
+def _build_projection():
+    settings = load_settings()
+    mapping = settings.field_mapping
+    projection = {"_id": 0}
+    if mapping.email:
+        projection[mapping.email] = 1
+    if mapping.name:
+        projection[mapping.name] = 1
+    if mapping.joined_date:
+        projection[mapping.joined_date] = 1
+    if mapping.last_active:
+        projection[mapping.last_active] = 1
+    for metric in settings.metrics:
+        projection[metric.field] = 1
+    return projection
 
 
 @tool
@@ -20,16 +35,11 @@ def find_users(
     limit: int | None = 200,
 ):
     """
-    Query SoulSync users with optional filters, sorting, and limit.
-
-    Available fields:
-    - name
-    - email
-    - authProvider
-    - totalListeningTime
-    - updatedAt (last active)
-    - createdAt (joined date)
+    Query users with optional filters, sorting, and limit.
+    Returns a summary string. The actual user data is stored in memory for the backend to retrieve.
     """
+    collection = get_users_collection()
+    projection = _build_projection()
 
     query = {}
     if filters:
@@ -52,51 +62,36 @@ def find_users(
             else:
                 query[k] = v
 
-    targeted_users = users_collection.find(
-        query,
-        {
-            "_id": 0,
-            "name": 1,
-            "email": 1,
-            "totalListeningTime": 1,
-            "updatedAt": 1,
-            "createdAt": 1,
-            "authProvider": 1,
-        },
-    )
+    cursor = collection.find(query, projection)
 
     if sort_by:
-        targeted_users = targeted_users.sort(
-            sort_by,
-            -1 if not ascending else 1,
-        )
+        cursor = cursor.sort(sort_by, -1 if not ascending else 1)
 
     if limit is None or limit <= 0:
         limit = 10000
-    
-    targeted_users = targeted_users.limit(limit)
+
+    cursor = cursor.limit(limit)
 
     def serialize(user):
         return {
-            k: (v.isoformat() if hasattr(v, "isoformat") else v)
+            k: (v.isoformat() if hasattr(v, "isoformat") else str(v) if hasattr(v, "binary") else v)
             for k, v in user.items()
         }
 
     global last_query_result
-    serialized_users = [serialize(u) for u in targeted_users]
+    serialized_users = [serialize(u) for u in cursor]
     last_query_result = serialized_users
 
     return f"Successfully found {len(serialized_users)} users matching the criteria."
 
 
-@tool
-def sendMail(receiver: str, subject: str, body: str) -> str:
-    """Send an approved email using Brevo."""
+def _send_email(receiver: str, subject: str, body: str) -> str:
+    settings = load_settings()
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key["api-key"] = BREVO_API_KEY
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-        sender={"name": SENDER_NAME, "email": SENDER_MAIL},
+        sender={"name": settings.sender_name, "email": settings.sender_email},
         to=[{"email": receiver}],
         subject=subject,
         html_content=body,
@@ -106,3 +101,9 @@ def sendMail(receiver: str, subject: str, body: str) -> str:
         return f"Sent to {receiver} (id: {api_response.message_id})"
     except ApiException as e:
         return f"Failed: {e}"
+
+
+@tool
+def sendMail(receiver: str, subject: str, body: str) -> str:
+    """Send an approved email using Brevo."""
+    return _send_email(receiver, subject, body)
