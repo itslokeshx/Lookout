@@ -57,7 +57,8 @@ export default function SetupView({ existingSettings, onComplete }) {
 
   const [databases, setDatabases] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [sampleFields, setSampleFields] = useState([]);
+  const [primaryFields, setPrimaryFields] = useState([]);
+  const [secondaryFields, setSecondaryFields] = useState([]);
 
   // Connection count state
   const [numCollections, setNumCollections] = useState(existingSettings?.enrichment?.collection ? 2 : 1);
@@ -140,39 +141,31 @@ export default function SetupView({ existingSettings, onComplete }) {
 
   useEffect(() => {
     let active = true;
-    const fetchFields = async () => {
-      if (!dbName || !collectionName) {
-        if (active) setSampleFields([]);
-        return;
-      }
-      try {
-        const primaryRes = await getSample(dbName, collectionName);
-        if (!active) return;
-        let fieldsList = primaryRes.fields || [];
+    if (!dbName || !collectionName) {
+      setPrimaryFields([]);
+      return;
+    }
+    getSample(dbName, collectionName).then((d) => {
+      if (active) setPrimaryFields(d.fields || []);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [dbName, collectionName]);
 
-        if (numCollections === 2 && enrichment.collection) {
-          const secondaryRes = await getSample(dbName, enrichment.collection);
-          if (!active) return;
-          const secondaryFields = secondaryRes.fields || [];
-          secondaryFields.forEach((sf) => {
-            if (!fieldsList.some((pf) => pf.name === sf.name)) {
-              fieldsList.push(sf);
-            }
-          });
-        }
-        setSampleFields(fieldsList);
-      } catch (err) {
-        console.error("Error fetching fields:", err);
-      }
-    };
+  useEffect(() => {
+    let active = true;
+    if (!dbName || !enrichment.collection || numCollections !== 2) {
+      setSecondaryFields([]);
+      return;
+    }
+    getSample(dbName, enrichment.collection).then((d) => {
+      if (active) setSecondaryFields(d.fields || []);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [dbName, enrichment.collection, numCollections]);
 
-    fetchFields();
-    return () => {
-      active = false;
-    };
-  }, [dbName, collectionName, numCollections, enrichment.collection]);
-
-  const fieldNames = sampleFields.map((f) => f.name);
+  const primaryFieldNames = primaryFields.map((f) => f.name);
+  const secondaryFieldNames = secondaryFields.map((f) => f.name);
+  const fieldNames = Array.from(new Set([...primaryFieldNames, ...secondaryFieldNames]));
 
   const handleSuggest = async () => {
     setSuggestionLoading(true);
@@ -400,8 +393,8 @@ export default function SetupView({ existingSettings, onComplete }) {
             <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
               <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Join Configuration</span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={fieldNames} placeholder="Select key" />
-                <InputField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} placeholder="e.g. userId" />
+                <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={primaryFieldNames} placeholder="Select key" />
+                <SelectField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} options={secondaryFieldNames} placeholder="Select key" />
               </div>
               {enrichment.reason && (
                 <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
