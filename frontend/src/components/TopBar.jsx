@@ -7,11 +7,6 @@ export default function TopBar({ status = 'idle', mode, onModeChange, onSettings
         <span className="text-base font-semibold tracking-tight text-text-primary">
           LookOut
         </span>
-        {productName && (
-          <span className="text-xs text-text-tertiary font-medium tracking-wide uppercase">
-            {productName}
-          </span>
-        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -50,7 +45,9 @@ export default function TopBar({ status = 'idle', mode, onModeChange, onSettings
                   : 'bg-text-tertiary'
             }`}
           />
-          <span className="text-xs text-text-tertiary capitalize">{status}</span>
+          <span className="text-xs text-text-tertiary">
+            {status === 'connected' && productName ? `Connected to ${productName}` : status}
+          </span>
         </div>
 
         {onThemeToggle && (
