@@ -1,33 +1,31 @@
 {
-  "db_name": "Chatty",
-  "collection_name": "userdetails",
+  "db_name": "soulsync",
+  "collection_name": "users",
   "field_mapping": {
-    "email": "",
-    "name": "username",
-    "joined_date": "",
-    "last_active": ""
+    "email": "email",
+    "name": "name",
+    "joined_date": "createdAt",
+    "last_active": "updatedAt"
   },
   "metrics": [
     {
-      "field": "text",
-      "label": "Messages",
-      "unit": ""
+      "field": "totalListeningTime",
+      "label": "Total Listening Time",
+      "unit": "seconds"
     }
   ],
   "extra_fields": [
-    "text"
+    "totalListeningTime",
+    "authProvider",
+    "onboardingComplete",
+    "isEmailVerified",
+    "preferences",
+    "photoURL",
+    "googleId"
   ],
-  "sender_name": "Chatty",
+  "sender_name": "Soulsync",
   "sender_email": "lokeshvijayraina@gmail.com",
-  "enrichment": {
-    "collection": "messages",
-    "local_key": "username",
-    "foreign_key": "username",
-    "relationship": "one-to-many",
-    "sort_field": null,
-    "sort_ascending": false,
-    "reason": ""
-  },
-  "product_name": "Chatty",
+  "enrichment": null,
+  "product_name": "Soulsync",
   "setup_complete": true
 }

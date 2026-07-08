@@ -158,21 +158,33 @@ def find_users(
 
 
 def _send_email(receiver: str, subject: str, body: str) -> str:
+    import time as _time
+
     settings = load_settings()
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key["api-key"] = BREVO_API_KEY
-    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-        sender={"name": settings.sender_name, "email": settings.sender_email},
-        to=[{"email": receiver}],
-        subject=subject,
-        html_content=body,
-    )
-    try:
-        api_response = api_instance.send_transac_email(send_smtp_email)
-        return f"Sent to {receiver} (id: {api_response.message_id})"
-    except ApiException as e:
-        return f"Failed: {e}"
+
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+                sib_api_v3_sdk.ApiClient(configuration)
+            )
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                sender={"name": settings.sender_name, "email": settings.sender_email},
+                to=[{"email": receiver}],
+                subject=subject,
+                html_content=body,
+            )
+            api_response = api_instance.send_transac_email(send_smtp_email)
+            return f"Sent to {receiver} (id: {api_response.message_id})"
+        except ApiException as e:
+            return f"Failed: {e}"
+        except Exception as e:
+            if attempt < max_retries - 1:
+                _time.sleep(1 * (attempt + 1))
+                continue
+            return f"Failed: Connection error after {max_retries} attempts: {e}"
 
 
 @tool

@@ -158,16 +158,23 @@ def get_sample_document(db_name: str, collection_name: str) -> dict | None:
 
 
 def _serialize_doc(doc: dict) -> dict:
+    from bson import ObjectId
+
     result = {}
     for k, v in doc.items():
-        if k == "_id":
+        if isinstance(v, ObjectId):
             result[k] = str(v)
         elif hasattr(v, "isoformat"):
             result[k] = v.isoformat()
         elif isinstance(v, dict):
             result[k] = _serialize_doc(v)
         elif isinstance(v, list):
-            result[k] = [_serialize_doc(i) if isinstance(i, dict) else i for i in v]
+            result[k] = [
+                _serialize_doc(i) if isinstance(i, dict)
+                else str(i) if isinstance(i, ObjectId)
+                else i
+                for i in v
+            ]
         else:
             result[k] = v
     return result
