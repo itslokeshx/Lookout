@@ -65,12 +65,13 @@ def chat_find_users(
             "$replaceRoot": {
                 "newRoot": {
                     "$mergeObjects": [
+                        {"$ifNull": ["$_enrichment_docs", {}]},
                         "$$ROOT",
-                        {"$ifNull": ["$_enrichment_docs", {}]}
                     ]
                 }
             }
         })
+        pipeline.append({"$unset": ["_enrichment_docs"]})
         if query:
             pipeline.append({"$match": query})
         if sort_by:
@@ -141,12 +142,13 @@ def count_users(filters: dict | None = None) -> str:
             "$replaceRoot": {
                 "newRoot": {
                     "$mergeObjects": [
+                        {"$ifNull": ["$_enrichment_docs", {}]},
                         "$$ROOT",
-                        {"$ifNull": ["$_enrichment_docs", {}]}
                     ]
                 }
             }
         })
+        pipeline.append({"$unset": ["_enrichment_docs"]})
         if query:
             pipeline.append({"$match": query})
         pipeline.append({"$count": "count"})
@@ -205,12 +207,13 @@ def aggregate_stat(
             "$replaceRoot": {
                 "newRoot": {
                     "$mergeObjects": [
+                        {"$ifNull": ["$_enrichment_docs", {}]},
                         "$$ROOT",
-                        {"$ifNull": ["$_enrichment_docs", {}]}
                     ]
                 }
             }
         })
+        pipeline.append({"$unset": ["_enrichment_docs"]})
 
     if filters:
         pipeline.append({"$match": _build_query(filters)})

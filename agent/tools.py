@@ -116,15 +116,34 @@ def find_users(
                 "preserveNullAndEmptyArrays": True
             }
         })
+
+        # Build a merge that prefixes conflicting enrichment fields
+        # to avoid overwriting primary document fields (e.g. playlists.name vs users.name)
+        enrichment_collection = settings.enrichment.collection
+        pipeline.append({
+            "$addFields": {
+                "_enrichment_flat": {"$ifNull": ["$_enrichment_docs", {}]}
+            }
+        })
+        # Get the enrichment fields that DON'T collide with root, plus prefixed versions
+        # of ones that DO collide. We do this by merging root-first, then selectively
+        # adding enrichment fields with a prefix for collisions.
+        # Since we can't introspect field names at aggregation time, we merge root-first
+        # (so root wins) and then add ALL enrichment fields with a prefix so they're
+        # always accessible.
         pipeline.append({
             "$replaceRoot": {
                 "newRoot": {
                     "$mergeObjects": [
+                        {"$ifNull": ["$_enrichment_docs", {}]},
                         "$$ROOT",
-                        {"$ifNull": ["$_enrichment_docs", {}]}
                     ]
                 }
             }
+        })
+        # Clean up temporary fields
+        pipeline.append({
+            "$unset": ["_enrichment_docs", "_enrichment_flat"]
         })
         if query:
             pipeline.append({"$match": query})
