@@ -1,12 +1,18 @@
-import { Settings, Sun, Moon } from 'lucide-react';
+import { Settings, Sun, Moon, Database } from 'lucide-react';
 
-export default function TopBar({ status = 'idle', mode, onModeChange, onSettingsClick, productName, theme, onThemeToggle }) {
+export default function TopBar({ status = 'idle', mode, onModeChange, onSettingsClick, productName, dbName, theme, onThemeToggle }) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-surface/80 backdrop-blur-xl border-b border-border">
       <div className="flex items-center gap-3">
         <span className="text-base font-semibold tracking-tight text-text-primary">
           LookOut
         </span>
+        {productName && (
+          <>
+            <span className="text-text-tertiary text-xs">/</span>
+            <span className="text-xs font-medium text-text-secondary">{productName}</span>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -35,7 +41,8 @@ export default function TopBar({ status = 'idle', mode, onModeChange, onSettings
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        {/* Connection status chip */}
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-raised border border-border">
           <div
             className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
               status === 'working'
@@ -45,9 +52,16 @@ export default function TopBar({ status = 'idle', mode, onModeChange, onSettings
                   : 'bg-text-tertiary'
             }`}
           />
-          <span className="text-xs text-text-tertiary">
-            {status === 'connected' && productName ? `Connected to ${productName}` : status}
-          </span>
+          {dbName && status === 'connected' ? (
+            <div className="flex items-center gap-1.5">
+              <Database size={11} className="text-text-tertiary" />
+              <span className="text-xs text-text-secondary font-medium">{dbName}</span>
+            </div>
+          ) : (
+            <span className="text-xs text-text-tertiary">
+              {status === 'working' ? 'Processing…' : status}
+            </span>
+          )}
         </div>
 
         {onThemeToggle && (
