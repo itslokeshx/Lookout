@@ -1,39 +1,62 @@
 {
-  "db_name": "soulsync",
+  "db_name": "test",
   "collection_name": "users",
   "field_mapping": {
     "email": "email",
     "name": "name",
     "joined_date": "createdAt",
-    "last_active": "updatedAt"
+    "last_active": "lastActiveAt"
   },
   "metrics": [
     {
-      "field": "totalListeningTime",
-      "label": "Total Listening Time",
-      "unit": "seconds"
+      "field": "notificationPreferences.email",
+      "label": "Email notifications enabled",
+      "unit": "boolean"
+    },
+    {
+      "field": "notificationPreferences.push",
+      "label": "Push notifications enabled",
+      "unit": "boolean"
+    },
+    {
+      "field": "notificationPreferences.dailySummary",
+      "label": "Daily summary notifications enabled",
+      "unit": "boolean"
+    },
+    {
+      "field": "notificationPreferences.goalReminders",
+      "label": "Goal reminder notifications enabled",
+      "unit": "boolean"
+    },
+    {
+      "field": "onboardingCompleted",
+      "label": "Onboarding completed",
+      "unit": "boolean"
     }
   ],
   "extra_fields": [
-    "totalListeningTime",
-    "authProvider",
-    "onboardingComplete",
-    "isEmailVerified",
-    "preferences",
-    "photoURL",
-    "googleId"
+    "notificationPreferences.email",
+    "notificationPreferences.push",
+    "notificationPreferences.dailySummary",
+    "notificationPreferences.goalReminders",
+    "onboardingCompleted",
+    "provider",
+    "theme",
+    "timezone",
+    "notificationPreferences",
+    "updatedAt"
   ],
-  "sender_name": "Soulsync",
+  "sender_name": "CorteXita",
   "sender_email": "lokeshvijayraina@gmail.com",
   "enrichment": {
-    "collection": "playlists",
+    "collection": "usersettings",
     "local_key": "_id",
     "foreign_key": "userId",
     "relationship": "one-to-one",
     "sort_field": null,
     "sort_ascending": false,
-    "reason": ""
+    "reason": "The secondary collection references the primary user document via the userId field that stores the primary's _id value."
   },
-  "product_name": "Soulsync",
+  "product_name": "CorteXita",
   "setup_complete": true
 }
