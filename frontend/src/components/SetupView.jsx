@@ -637,10 +637,37 @@ export default function SetupView({ existingSettings, onComplete }) {
       )}
 
       {step === 2 && (
-        <div className="space-y-5 animate-slide-up">
-          <span className="text-sm font-medium text-text-primary block mb-2">Sender Details</span>
-          <InputField label="Sender Name" value={senderName} onChange={setSenderName} placeholder="e.g. SoulSync" />
-          <InputField label="Sender Email" value={senderEmail} onChange={setSenderEmail} placeholder="e.g. hello@soulsync.com" helper="Must be verified in your Brevo account." />
+        <div className="space-y-6 animate-slide-up">
+          <div className="bg-surface-raised border border-border rounded-xl p-5 space-y-4">
+            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Sender Details</span>
+            <InputField label="Sender Name" value={senderName} onChange={setSenderName} placeholder="e.g. SoulSync" />
+            <InputField label="Sender Email" value={senderEmail} onChange={setSenderEmail} placeholder="e.g. hello@soulsync.com" helper="Must be verified in your Brevo account." />
+          </div>
+
+          {/* Configuration summary */}
+          <div className="bg-surface-raised border border-border rounded-xl p-5 space-y-3">
+            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Configuration Summary</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-surface border border-border rounded-lg px-3 py-2.5">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Database</p>
+                <p className="text-sm font-medium text-text-primary mt-0.5">{dbName || '—'}</p>
+              </div>
+              <div className="bg-surface border border-border rounded-lg px-3 py-2.5">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Collection</p>
+                <p className="text-sm font-medium text-text-primary mt-0.5">{collectionName || '—'}</p>
+              </div>
+              {numCollections === 2 && enrichment.collection && (
+                <div className="bg-surface border border-border rounded-lg px-3 py-2.5">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Enrichment</p>
+                  <p className="text-sm font-medium text-text-primary mt-0.5">{enrichment.collection}</p>
+                </div>
+              )}
+              <div className="bg-surface border border-border rounded-lg px-3 py-2.5">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Product</p>
+                <p className="text-sm font-medium text-text-primary mt-0.5">{productName || '—'}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
