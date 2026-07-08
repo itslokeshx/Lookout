@@ -2,7 +2,7 @@
 
 # 🔭 LookOut
 
-**Ask your database anything. Approve every email before it ships.**
+**An AI agent for your database. It investigates. It drafts. You decide what ships.**
 
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
@@ -19,17 +19,17 @@
 
 ## Overview
 
-LookOut connects to your MongoDB cluster, learns how your collections relate, and lets you work with your data in plain English — ask a question, or describe a campaign, and it handles the query or the draft.
+LookOut is an AI agent that lives on top of your MongoDB cluster. Tell it how your collections relate, then just talk to it — ask a question and it investigates, describe a campaign and it drafts one.
 
 No SQL. No hand-written aggregation pipelines. No copy-pasting between an LLM and your inbox.
 
-Two modes, two different agents: one that only ever reads, and one that only ever drafts — never one model doing both.
+Under the hood, it's not one agent doing everything — it's two specialists. One only ever reads. One only ever drafts. Neither one sends anything without you.
 
 <br/>
 
 ## Architecture
 
-Four layers, cleanly separated: a React dashboard, a thin FastAPI layer, two agents with different tool access, and the systems they're allowed to touch.
+A multi-agent system, cleanly layered: a React dashboard, a thin FastAPI layer, two specialized agents, and the systems they're allowed to touch.
 
 ```mermaid
 flowchart LR
@@ -77,7 +77,7 @@ The Chat Agent and Mail Agent are never the same process, and neither is ever ha
 
 ## How It Works
 
-**Mail mode** — one prompt in, one template out, one human decision in the middle, then a boring, predictable render-and-send loop:
+**Mail Agent** — hand it a goal in plain English. It investigates who matches, drafts one campaign, and waits for your yes before anything moves further:
 
 ```mermaid
 flowchart TD
@@ -95,7 +95,7 @@ flowchart TD
 
 Everything left of the approval step is a single LLM call. Everything right of it is Python — no further model involvement, which is why reviewing one preview is enough to trust all of them.
 
-**Chat mode** — same agent pattern, opposite guarantee: there's no path out of this diagram toward anything that writes or sends.
+**Chat Agent** — same investigate-first pattern, opposite ceiling: there's no path out of this diagram toward anything that writes or sends.
 
 ```mermaid
 flowchart TD
@@ -114,18 +114,19 @@ flowchart TD
 
 ## Safety Model
 
-Any agent can query a database and draft an email. What matters is what it's not allowed to do.
+The easy version of this product is one agent that does everything, including hitting send. That's not what shipped, on purpose.
 
-- **Two agents, not one.** The model that answers questions and the model that drafts campaigns never share a process, let alone a toolset.
-- **Ranking is math.** No model decides who's worth emailing — a plain aggregation pipeline sorts and filters, full stop.
-- **You approve a real email, not a template.** The preview shows actual recipient data — never `{name}` still sitting there unrendered.
+- **Two agents, not one.** The agent that investigates and the agent that drafts campaigns never share a process, let alone a toolset — a multi-agent system by design, not one model wearing two hats.
+- **Ranking is math, not judgment.** No model decides who's worth emailing — a plain aggregation pipeline sorts and filters, full stop.
+- **The agent drafts. You ship.** Every campaign stops at a real, fully-rendered preview — never a template with `{name}` still in it — until a human says go.
 - **Guesses stay guesses until confirmed.** Auto-suggested field mappings and join keys are shown against a real sample record. Nothing saves until a human says yes.
-- **Chat mode can't send anything.** Not a rule it follows — a tool it was never given.
+- **The Chat Agent physically can't send anything.** Not a rule it follows — a tool it was never given.
 
 <br/>
 
 ## Features
 
+- **A multi-agent system** — an investigating agent and a drafting agent, never the same process
 - **Bring your own database** — any MongoDB cluster, any schema, chosen at setup
 - **Multi-collection joins** — one-to-one and one-to-many, resolved without duplicate rows
 - **Live setup wizard** — auto-suggested field mapping, instant join validation against a real record

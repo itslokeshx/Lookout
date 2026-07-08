@@ -47,6 +47,8 @@ class FindUsersRequest(BaseModel):
 
 class ApproveDispatchRequest(BaseModel):
     dispatch_id: str
+    subject_template: str | None = None
+    body_template: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -218,6 +220,8 @@ async def find_users_endpoint(req: FindUsersRequest):
             "subject": preview.subject,
             "body": preview.body,
             "reason": template.reason,
+            "subject_template": template.subject_template,
+            "body_template": template.body_template,
         },
         "dispatch_id": dispatch_id,
     }
@@ -231,6 +235,13 @@ async def approve_dispatch_endpoint(req: ApproveDispatchRequest):
 
     users = dispatch["users"]
     template = dispatch["template"]
+
+    # Apply edits from frontend if provided
+    if req.subject_template is not None:
+        template.subject_template = req.subject_template
+    if req.body_template is not None:
+        template.body_template = req.body_template
+
     start = time.time()
 
     results = []
