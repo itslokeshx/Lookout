@@ -11,9 +11,19 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-000000?style=flat-square)
 
-[Quick Start](#quick-start) · [Architecture](#architecture) · [How It Works](#how-it-works) · [Safety Model](#safety-model)
+[Quick Start](#quick-start) · [Architecture](#architecture) · [How It Works](#how-it-works) · [Design Decisions](#design-decisions)
 
 </div>
+
+<br/>
+
+## Why I Built This
+
+I wanted to thank SoulSync's most engaged listeners. The actual process: export users from MongoDB, paste them into an LLM and ask for the top listeners, ask for a personalized email per person, then copy each draft into my email service by hand.
+
+The campaign worked. The workflow didn't. I wasn't making decisions anymore — I was just the wire between three systems that each already knew their job: the database had the users, the LLM knew how to write, the email service knew how to send. The only slow part was me, passing data between them by hand.
+
+That's LookOut: one prompt, instead of four tools and a lot of copy-pasting.
 
 <br/>
 
@@ -124,6 +134,35 @@ The easy version of this product is one agent that does everything, including hi
 
 <br/>
 
+## Design Decisions
+
+**Why not LangChain's MongoDB agent toolkit?**
+
+LangChain ships `MongoDBDatabaseToolkit` — schema discovery, query generation, and execution as ready-made tools, so an agent can, in principle, write its own aggregation pipeline from a natural-language question with no configuration at all. Two things ruled it out after testing it against a real dataset:
+
+- **Token cost that scales with your schema, not with the question.** A general-purpose query-writing agent has to reason about collection structure before it can write anything — the more collections and fields you have, the more context every single query carries. LookOut's setup wizard resolves field mappings once, with a human confirming them, so a live query is one small, pre-scoped tool call instead of a discovery-then-generate-then-check loop repeated every time.
+- **It got worse, not better, on real data.** In testing, free-form query generation misread schema and produced wrong results on prompts a narrow, pre-mapped tool handles correctly by construction — because that tool was never guessing what your fields mean in the first place.
+
+The tradeoff: confirm your field mappings once, at setup. Every query afterward is cheap, fast, and can't misread your schema — because it was never asked to read it in real time.
+
+**Why two agents instead of one flexible one?**
+
+A single agent holding both `find_users` and `sendMail` is fewer moving parts to build, and a real risk the moment it misreads a prompt. Splitting investigation and drafting into separate agents with separate toolsets means the drafting agent is structurally incapable of sending, and the Chat Agent is structurally incapable of writing anything at all — neither guarantee depends on the model behaving; it depends on what tools exist.
+
+**Why one template, rendered per user — not one draft per user?**
+
+Nobody reviews 160 individually-written emails before approving a send. Generating a fresh draft per recipient also means every single one is a fresh chance for the model to drift in tone or invent a detail that wasn't in the source data. LookOut generates exactly one template, previews it fully rendered against one real user, then substitutes data for every other recipient in plain Python — no further model calls. Approving one preview is a real guarantee about all of them, because nothing after that point gets generated again.
+
+**Why is ranking deterministic instead of asking the model who's "top"?**
+
+Sorting isn't a task that benefits from a language model's judgment — it's arithmetic. Every ranking runs through a plain aggregation pipeline on the raw underlying value before anything is rounded for display. The model never sees the ranking step; it only ever sees the result.
+
+**Why confirm field mappings and joins instead of inferring them silently?**
+
+An automatic guess about which field joins two collections is either right, or it's a quiet failure — someone gets an email built from someone else's activity data, and nothing about that looks broken until a person notices. LookOut always shows the guess against a real sample record and waits for a confirmation click before saving it. The cost is one click; the alternative is a class of bug that doesn't announce itself.
+
+<br/>
+
 ## Features
 
 - **A multi-agent system** — an investigating agent and a drafting agent, never the same process
@@ -137,22 +176,37 @@ The easy version of this product is one agent that does everything, including hi
 
 ## Quick Start
 
+**Prerequisites:** Python 3.12+, Node.js 18+, [uv](https://github.com/astral-sh/uv)
+
+**1. Clone and install**
+
 ```bash
 git clone https://github.com/itslokeshx/Lookout.git
 cd Lookout
 uv sync && source .venv/bin/activate
-cp .env.example .env   # add GROQ_API_KEY, BREVO_API_KEY, MONGODB_URI
 cd frontend && npm install && cd ..
 ```
 
-Run it:
+**2. Configure**
+
+```bash
+cp .env.example .env
+```
+
+```
+GROQ_API_KEY=...     # console.groq.com
+BREVO_API_KEY=...    # app.brevo.com → SMTP & API
+MONGODB_URI=...      # your Atlas connection string
+```
+
+**3. Run**
 
 ```bash
 .venv/bin/uvicorn backend.server:app --reload --port 8000   # terminal 1
-cd frontend && npm run dev                                   # terminal 2
+cd frontend && npm run dev                                    # terminal 2
 ```
 
-Open `http://localhost:5173` — the setup wizard runs on first launch.
+Open `http://localhost:5173` — the setup wizard runs automatically on first launch and walks you through connecting your database.
 
 <br/>
 
@@ -273,18 +327,6 @@ No duplicate rows, no silent data loss — the sort/limit behavior is explicit a
 **2. Field mapping** — map email/name (or click **Auto-suggest**), optionally join-date and last-active, and any numeric metrics worth aggregating. A live schema preview shows the exact JSON structure being queried as you go.
 
 **3. Sender configuration** — set the name and address recipients see. Saving syncs to both `settings.json` and `_lookout_config`.
-
-</details>
-
-<details>
-<summary><b>Why I built this</b></summary>
-<br/>
-
-I wanted to thank SoulSync's most engaged listeners. The actual process: export users from MongoDB, paste them into an LLM and ask for the top listeners, ask for a personalized email per person, then copy each draft into my email service by hand.
-
-The campaign worked. The workflow didn't. I wasn't making decisions anymore — I was just the wire between three systems that each already knew their job: the database had the users, the LLM knew how to write, the email service knew how to send. The only slow part was me, passing data between them by hand.
-
-That's LookOut: one prompt, instead of four tools and a lot of copy-pasting.
 
 </details>
 
