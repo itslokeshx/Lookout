@@ -3,6 +3,7 @@ from langchain_core.tools import tool
 
 from agent.config_store import load_settings
 from agent.db.client import get_users_collection
+from agent.tools import clean_projection
 
 
 @tool
@@ -35,6 +36,7 @@ def chat_find_users(
     for extra in settings.extra_fields:
         if extra:
             projection[extra] = 1
+    projection = clean_projection(projection)
 
     query = _build_query(filters)
     if settings.enrichment and settings.enrichment.collection:
@@ -90,13 +92,8 @@ def chat_find_users(
             limit = 50
         cursor = cursor.limit(limit)
 
-    def serialize(user):
-        return {
-            k: (v.isoformat() if hasattr(v, "isoformat") else str(v) if hasattr(v, "binary") else v)
-            for k, v in user.items()
-        }
-
-    users = [serialize(u) for u in cursor]
+    from agent.config_store import _serialize_doc
+    users = [_serialize_doc(u) for u in cursor]
     if not users:
         return "No users found matching those criteria."
 
@@ -334,13 +331,8 @@ def find_secondary_documents(
         limit = 50
     cursor = cursor.limit(limit)
 
-    def serialize(doc):
-        return {
-            k: (v.isoformat() if hasattr(v, "isoformat") else str(v) if hasattr(v, "binary") else v)
-            for k, v in doc.items()
-        }
-
-    docs = [serialize(d) for d in cursor]
+    from agent.config_store import _serialize_doc
+    docs = [_serialize_doc(d) for d in cursor]
     if not docs:
         return f"No documents found in secondary collection '{settings.enrichment.collection}' matching those criteria."
 

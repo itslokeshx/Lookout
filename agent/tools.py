@@ -10,6 +10,28 @@ from agent.db.client import get_users_collection
 last_query_result = []
 
 
+def clean_projection(proj: dict) -> dict:
+    has_id = "_id" in proj
+    id_val = proj.get("_id")
+    fields = [k for k, v in proj.items() if k != "_id" and v == 1]
+    # Sort by number of parts in dot notation (parents first)
+    fields.sort(key=lambda x: len(x.split('.')))
+    cleaned = {}
+    for f in fields:
+        parts = f.split('.')
+        is_redundant = False
+        for i in range(1, len(parts)):
+            parent = ".".join(parts[:i])
+            if parent in cleaned:
+                is_redundant = True
+                break
+        if not is_redundant:
+            cleaned[f] = 1
+    if has_id:
+        cleaned["_id"] = id_val
+    return cleaned
+
+
 def _build_projection():
     settings = load_settings()
     mapping = settings.field_mapping
@@ -28,7 +50,7 @@ def _build_projection():
     for extra in settings.extra_fields:
         if extra:
             projection[extra] = 1
-    return projection
+    return clean_projection(projection)
 
 
 import datetime
@@ -163,14 +185,9 @@ def find_users(
             limit = 10000
         cursor = cursor.limit(limit)
 
-    def serialize(user):
-        return {
-            k: (v.isoformat() if hasattr(v, "isoformat") else str(v) if hasattr(v, "binary") else v)
-            for k, v in user.items()
-        }
-
+    from agent.config_store import _serialize_doc
     global last_query_result
-    serialized_users = [serialize(u) for u in cursor]
+    serialized_users = [_serialize_doc(u) for u in cursor]
     last_query_result = serialized_users
 
     return f"Successfully found {len(serialized_users)} users matching the criteria."
