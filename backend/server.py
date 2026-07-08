@@ -188,7 +188,24 @@ async def find_users_endpoint(req: FindUsersRequest):
 
     settings = load_settings()
 
+    import re
+    def pretty_date(val):
+        if not isinstance(val, str):
+            return val
+        match = re.match(r"^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?)?", val)
+        if match:
+            try:
+                year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                if 1 <= month <= 12 and 1 <= day <= 31:
+                    return f"{months[month]} {day}, {year}"
+            except Exception:
+                pass
+        return val
+
     for i, user in enumerate(matched_users):
+        for k, v in list(user.items()):
+            user[k] = pretty_date(v)
         for metric in settings.metrics:
             raw = user.get(metric.field, 0)
             unit_lower = (metric.unit or "").lower()
