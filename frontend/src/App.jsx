@@ -207,6 +207,7 @@ export default function App() {
           theme={theme}
           onThemeToggle={toggleTheme}
           productName={settings?.product_name}
+          dbName={settings?.db_name}
           onSettingsClick={view === 'settings' ? () => setView('main') : undefined}
         />
         <main className="pt-20">
@@ -229,6 +230,7 @@ export default function App() {
         onModeChange={(m) => { setMode(m); if (m === 'mail') resetFlow(); }}
         onSettingsClick={() => setView('settings')}
         productName={settings?.product_name}
+        dbName={settings?.db_name}
       />
 
       <main className="pt-16">
@@ -269,12 +271,12 @@ export default function App() {
                       <p className="text-sm text-text-secondary">{prompt}</p>
                     </div>
                   </div>
-                  <MatchedUsersTable users={matchedUsers} prompt={prompt} settings={settings} />
                   <TemplatePreview
                     template={template}
                     onApprove={handleApprove}
                     onReject={handleReject}
                   />
+                  <MatchedUsersTable users={matchedUsers} prompt={prompt} settings={settings} />
                 </div>
               )}
 
