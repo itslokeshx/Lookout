@@ -352,29 +352,31 @@ export default function SetupView({ existingSettings, onComplete }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-text-tertiary uppercase tracking-wider">Number of collections</label>
+            <label className="text-xs font-medium text-text-tertiary uppercase tracking-wider">Data Source</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setNumCollections(1)}
-                className={`py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 cursor-pointer ${
+                className={`py-3.5 px-4 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
                   numCollections === 1
-                    ? 'border-accent bg-accent-muted text-accent'
-                    : 'border-border bg-surface-raised text-text-secondary hover:bg-surface-hover'
+                    ? 'border-accent bg-accent-muted'
+                    : 'border-border bg-surface-raised hover:bg-surface-hover'
                 }`}
               >
-                1 Collection
+                <span className={`text-sm font-medium block ${numCollections === 1 ? 'text-accent' : 'text-text-secondary'}`}>Single Collection</span>
+                <span className="text-[11px] text-text-tertiary mt-0.5 block">All user data in one collection</span>
               </button>
               <button
                 type="button"
                 onClick={() => setNumCollections(2)}
-                className={`py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 cursor-pointer ${
+                className={`py-3.5 px-4 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
                   numCollections === 2
-                    ? 'border-accent bg-accent-muted text-accent'
-                    : 'border-border bg-surface-raised text-text-secondary hover:bg-surface-hover'
+                    ? 'border-accent bg-accent-muted'
+                    : 'border-border bg-surface-raised hover:bg-surface-hover'
                 }`}
               >
-                2 Collections (Join / Enrichment)
+                <span className={`text-sm font-medium block ${numCollections === 2 ? 'text-accent' : 'text-text-secondary'}`}>Two Collections</span>
+                <span className="text-[11px] text-text-tertiary mt-0.5 block">Join user data with related records</span>
               </button>
             </div>
           </div>
@@ -409,56 +411,88 @@ export default function SetupView({ existingSettings, onComplete }) {
           )}
 
           {numCollections === 2 && enrichment.collection && (
-            <div className="bg-surface-raised border border-border rounded-xl p-4 space-y-4">
-              <div>
-                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Join Configuration</span>
-                <p className="text-[11px] text-text-tertiary mt-1">Choose the fields that connect your two collections (usually a shared identifier like "username" or "userId").</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectField label="Local Key (primary)" value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={primaryFieldNames} placeholder="Select key" helper="The key in your Primary collection (e.g. username)" />
-                <SelectField label="Foreign Key (secondary)" value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} options={secondaryFieldNames} placeholder="Select key" helper="The matching key in your Secondary collection" />
-              </div>
-              {enrichment.reason && (
-                <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
-                  <p className="text-xs text-accent">AI suggestion: {enrichment.reason}</p>
-                </div>
-              )}
-              {enrichment.local_key && enrichment.foreign_key && (
-                <button type="button" onClick={handleCheckJoin} disabled={loading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-border text-text-secondary hover:bg-surface-hover transition-all duration-150 cursor-pointer">
-                  {loading ? <Loader2 size={12} className="animate-spin" /> : null}
-                  Check relationship
-                </button>
-              )}
-              {joinCheckResult && (
-                <div className={`rounded-lg border px-3 py-2.5 ${
-                  joinCheckResult.match_count === 0
-                    ? 'border-error/20 bg-error/5'
-                    : joinCheckResult.relationship === 'one-to-many'
-                      ? 'border-warning/30 bg-warning/5'
-                      : 'border-success/30 bg-success/5'
-                }`}>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {joinCheckResult.match_count === 0 ? (
-                      <span className="text-xs font-semibold text-error">
-                        ⚠️ Connection Check: 0 matches. Ensure both keys contain matching values (e.g., both are usernames).
-                      </span>
-                    ) : (
-                      <>
-                        {joinCheckResult.relationship === 'one-to-many' && <AlertTriangle size={12} className="text-warning" />}
-                        <span className={`text-xs font-semibold ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`}>
-                          ✓ Connected Successfully! Found {joinCheckResult.match_count} match(es) for sample record ({joinCheckResult.relationship}).
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {joinCheckResult.match_count > 0 && joinCheckResult.relationship === 'one-to-many' && (
-                    <div className="mt-2 space-y-2">
-                      <p className="text-xs text-text-tertiary">Multiple matches found. Choose a resolution strategy:</p>
-                      <InputField label="Sort Field" value={enrichment.sort_field || ''} onChange={(v) => setEnrichment({ ...enrichment, sort_field: v })} placeholder="e.g. createdAt" helper="Use the most recent record by this field." />
-                    </div>
+            <div className="rounded-xl border border-border overflow-hidden">
+              {/* Visual connection header */}
+              <div className="bg-surface-raised px-5 py-4 border-b border-border">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Join Configuration</span>
+                  {joinCheckResult && joinCheckResult.match_count > 0 && (
+                    <span className="text-[10px] font-semibold text-success uppercase tracking-wider">● Connected</span>
                   )}
                 </div>
-              )}
+                {/* Visual flow diagram */}
+                <div className="flex items-center gap-3 mt-3 px-1">
+                  <div className="flex-1 px-3 py-2 rounded-lg bg-surface border border-border text-center">
+                    <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Primary</p>
+                    <p className="text-xs font-semibold text-text-primary mt-0.5 truncate">{collectionName}</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5 shrink-0">
+                    <ArrowRight size={14} className="text-accent" />
+                    <span className="text-[9px] text-text-tertiary">JOIN</span>
+                  </div>
+                  <div className="flex-1 px-3 py-2 rounded-lg bg-surface border border-border text-center">
+                    <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Secondary</p>
+                    <p className="text-xs font-semibold text-text-primary mt-0.5 truncate">{enrichment.collection}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Join keys */}
+              <div className="px-5 py-4 space-y-4">
+                <p className="text-[11px] text-text-tertiary">Select the fields that link these collections (e.g. a shared user ID or username).</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SelectField label={`Key in ${collectionName}`} value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={primaryFieldNames} placeholder="Select key" />
+                  <SelectField label={`Key in ${enrichment.collection}`} value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} options={secondaryFieldNames} placeholder="Select key" />
+                </div>
+
+                {enrichment.reason && (
+                  <div className="rounded-lg border border-accent/20 bg-accent-muted/50 px-3 py-2">
+                    <p className="text-xs text-accent">💡 AI suggestion: {enrichment.reason}</p>
+                  </div>
+                )}
+
+                {enrichment.local_key && enrichment.foreign_key && !joinCheckResult && (
+                  <button type="button" onClick={handleCheckJoin} disabled={loading} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-accent text-surface hover:bg-accent-hover transition-all duration-150 cursor-pointer disabled:opacity-50">
+                    {loading ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
+                    Verify Connection
+                  </button>
+                )}
+
+                {joinCheckResult && (
+                  <div className={`rounded-lg border px-4 py-3 ${
+                    joinCheckResult.match_count === 0
+                      ? 'border-error/20 bg-error/5'
+                      : joinCheckResult.relationship === 'one-to-many'
+                        ? 'border-warning/30 bg-warning/5'
+                        : 'border-success/30 bg-success/5'
+                  }`}>
+                    {joinCheckResult.match_count === 0 ? (
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle size={13} className="text-error mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-semibold text-error">No matches found</p>
+                          <p className="text-[11px] text-text-tertiary mt-0.5">Ensure both keys contain matching values (e.g., both reference the same user identifier).</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <Check size={13} className={`mt-0.5 shrink-0 ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`} />
+                        <div>
+                          <p className={`text-xs font-semibold ${joinCheckResult.relationship === 'one-to-many' ? 'text-warning' : 'text-success'}`}>
+                            Connected — {joinCheckResult.match_count} match{joinCheckResult.match_count !== 1 ? 'es' : ''} ({joinCheckResult.relationship})
+                          </p>
+                          {joinCheckResult.relationship === 'one-to-many' && (
+                            <div className="mt-2">
+                              <p className="text-[11px] text-text-tertiary mb-2">Multiple matches per user. Pick the most relevant by sorting:</p>
+                              <InputField label="Sort Field" value={enrichment.sort_field || ''} onChange={(v) => setEnrichment({ ...enrichment, sort_field: v })} placeholder="e.g. createdAt" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
