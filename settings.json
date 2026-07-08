@@ -25,7 +25,15 @@
   ],
   "sender_name": "Soulsync",
   "sender_email": "lokeshvijayraina@gmail.com",
-  "enrichment": null,
+  "enrichment": {
+    "collection": "playlists",
+    "local_key": "_id",
+    "foreign_key": "userId",
+    "relationship": "one-to-one",
+    "sort_field": null,
+    "sort_ascending": false,
+    "reason": ""
+  },
   "product_name": "Soulsync",
   "setup_complete": true
 }

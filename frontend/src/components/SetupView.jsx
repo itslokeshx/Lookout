@@ -441,8 +441,8 @@ export default function SetupView({ existingSettings, onComplete }) {
               <div className="px-5 py-4 space-y-4">
                 <p className="text-[11px] text-text-tertiary">Select the fields that link these collections (e.g. a shared user ID or username).</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <SelectField label={`Key in ${collectionName}`} value={enrichment.local_key} onChange={(v) => setEnrichment({ ...enrichment, local_key: v })} options={primaryFieldNames} placeholder="Select key" />
-                  <SelectField label={`Key in ${enrichment.collection}`} value={enrichment.foreign_key} onChange={(v) => setEnrichment({ ...enrichment, foreign_key: v })} options={secondaryFieldNames} placeholder="Select key" />
+                  <SelectField label={`Key in ${collectionName}`} value={enrichment.local_key} onChange={(v) => { setEnrichment({ ...enrichment, local_key: v }); setJoinCheckResult(null); }} options={primaryFieldNames} placeholder="Select key" />
+                  <SelectField label={`Key in ${enrichment.collection}`} value={enrichment.foreign_key} onChange={(v) => { setEnrichment({ ...enrichment, foreign_key: v }); setJoinCheckResult(null); }} options={secondaryFieldNames} placeholder="Select key" />
                 </div>
 
                 {enrichment.reason && (
