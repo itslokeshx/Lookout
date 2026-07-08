@@ -134,7 +134,7 @@ export default function App() {
     }
   }, []);
 
-  const handleApprove = useCallback(async () => {
+  const handleApprove = useCallback(async (subjectTemplate, bodyTemplate) => {
     setStage('sending');
     setStatus('working');
     setSendResults([]);
@@ -142,7 +142,7 @@ export default function App() {
     setSendFailed(0);
 
     try {
-      const data = await approveDispatch(dispatchId);
+      const data = await approveDispatch(dispatchId, subjectTemplate, bodyTemplate);
 
       if (data.results) {
         const results = data.results;
@@ -273,6 +273,8 @@ export default function App() {
                   </div>
                   <TemplatePreview
                     template={template}
+                    users={matchedUsers}
+                    settings={settings}
                     onApprove={handleApprove}
                     onReject={handleReject}
                   />

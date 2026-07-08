@@ -57,8 +57,11 @@ export async function findUsers(prompt) {
   return request('POST', '/find-users', { prompt });
 }
 
-export async function approveDispatch(dispatchId) {
-  return request('POST', '/approve-dispatch', { dispatch_id: dispatchId });
+export async function approveDispatch(dispatchId, subjectTemplate, bodyTemplate) {
+  const body = { dispatch_id: dispatchId };
+  if (subjectTemplate !== undefined) body.subject_template = subjectTemplate;
+  if (bodyTemplate !== undefined) body.body_template = bodyTemplate;
+  return request('POST', '/approve-dispatch', body);
 }
 
 export async function getDispatchHistory() {
