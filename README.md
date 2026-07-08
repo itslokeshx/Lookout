@@ -1,370 +1,261 @@
-<div align="center">
-
 # 🔭 LookOut
 
-### The Autonomous AI Agent for Multi-Collection Database Analytics & Campaigns
+**The Autonomous AI Agent for Multi-Collection Database Analytics & Campaigns**
 
-*An intelligent, multi-collection database agent that answers analytical queries and autonomously orchestrates dynamic marketing campaigns.*
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?logo=langchain&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
+![Brevo](https://img.shields.io/badge/Brevo-Transactional_Email-0B996E)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev)
-[![Tailwind](https://img.shields.io/badge/Tailwind_v4-06B6D4?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
-[![LangChain](https://img.shields.io/badge/LangChain-Orchestration-1C3C3A?style=flat-square)](https://langchain.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com)
-[![Brevo](https://img.shields.io/badge/Brevo-Email-0092FF?style=flat-square)](https://www.brevo.com)
+> "LookOut started because I was tired of being the human bridge between my database, an LLM, and my email provider. Today, that bridge is a single prompt."
 
-</div>
+An intelligent, multi-collection database agent that answers analytical questions in plain English and orchestrates targeted email campaigns — with every dispatch gated behind explicit human approval.
+
+---
+
+## Table of Contents
+
+- [The Story Behind LookOut](#-the-story-behind-lookout)
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Execution Flow](#-execution-flow)
+- [Features](#-features)
+- [Project Structure](#-project-structure)
+- [Codebase Reference](#-codebase-reference)
+- [Database Join Strategy](#-database-join-strategy)
+- [Setup & Installation](#-setup--installation)
+- [Dashboard Onboarding & Setup Wizard](#-dashboard-onboarding--setup-wizard)
+- [Dashboard Modes](#-dashboard-modes)
+- [Benchmarks](#-benchmarks)
+- [Safety & Design Principles](#-safety--design-principles)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
 ## 📖 The Story Behind LookOut
 
-> **"LookOut started because I was tired of being the human bridge between my database, an LLM, and my email provider. Today, that bridge is a single prompt."**
-
 LookOut wasn't born because I wanted to build an AI agent. It was born because I got tired of doing the same manual workflow over and over again.
 
-While working on **SoulSync**, I decided I wanted to thank and reward my most engaged listeners. It sounded like a simple task, but the actual process quickly became frustrating:
+While working on SoulSync, I wanted to thank and reward my most engaged listeners. It sounded like a simple task, but the actual process quickly became tedious:
 
-1. **Export:** Exported all of my users from MongoDB.
-2. **Analyze:** Uploaded the exported data to Claude and asked it to identify the top listeners based on their listening time.
-3. **Draft:** Asked Claude to generate a personalized email for each user.
-4. **Copy-Paste:** Manually copied every generated email, opened my email service, pasted the content, selected the correct recipient, and sent the emails one-by-one.
+1. **Export** every user from MongoDB.
+2. **Analyze** the export by hand-feeding it to an LLM and asking it to identify the top listeners.
+3. **Draft** a personalized email for each one, one prompt at a time.
+4. **Copy-paste** every generated email into my email service, one recipient at a time.
 
-The campaign was successful; the workflow was not.
+The campaign worked. The workflow didn't.
 
-I wasn't making decisions anymore. I was simply acting as the bridge between my database, the LLM, and my email provider. The database already had the users, the LLM knew how to write the emails, and the email service knew how to deliver them. The only thing connecting those three systems was... **me**.
+I wasn't making decisions anymore — I was just acting as the wire between three systems that each already knew their job: the database had the users, the LLM knew how to write the emails, and the email service knew how to deliver them. The only slow part was me, manually passing data between them.
 
-That was the moment the idea for LookOut clicked:
+That was the moment LookOut clicked: why not let an agent orchestrate the whole thing — discover the right users, draft personalized copy with clear reasoning, present it for approval, and dispatch only what's approved?
 
-> **Why not let an AI agent orchestrate the entire workflow?**
-
-The agent could discover the right users, generate personalized email drafts with clear reasoning, present everything for human approval, and then dispatch the approved emails automatically.
-
-What used to take multiple tools, repeated prompts, and a lot of manual copy-pasting is now a single natural language prompt. That's how LookOut was born — not from the desire to build another AI project, but from solving a real-world, repetitive problem.
+What used to take four tools and a lot of copy-pasting is now one natural-language prompt.
 
 ---
 
 ## 🚀 Overview
 
-**LookOut** is an autonomous AI agent system designed to interactively explore, query, and campaign over multi-collection databases. Built for founders, developers, and product teams, it allows you to connect *any* MongoDB database (currently, LookOut only supports MongoDB), specify relationships between collections, query records in plain English, and autonomously dispatch targeted HTML email campaigns.
+LookOut connects to any MongoDB database, lets you describe relationships between collections, and answers questions or runs campaigns entirely in plain English — no SQL, no hand-built aggregation pipelines, no manually assembled HTML emails.
 
-Instead of writing SQL queries, building custom MongoDB aggregation pipelines, or designing HTML emails, you describe your target audience and intent directly in natural language:
+```
+"Count the users who signed up last week."
+"List the messages sent by users on Gmail."
+"Mail the top 5 users by listening time to announce our new feature."
+```
 
-> *"Count the total number of users who signed up last week."*  
-> *"List the messages sent by users who are using Gmail."*  
-> *"Mail the top 5 users by listenedTime to announce our new feature."*
+LookOut operates in two distinct, structurally separated modes:
 
-LookOut operates in two distinct modes:
-- **💬 Chat Mode (Database Analytics):** Ask natural-language questions about your users, collection metrics, or joined tables. LookOut automatically queries your database and displays summary counts, averages, and formatted records.
-- **✉️ Mail Mode (Campaign Orchestration):** Describe your target audience in plain English, dynamically generate personalized email templates, preview the dynamic HTML rendered versions, and securely dispatch transactional email campaigns.
+| Mode | Purpose | Can it send anything? |
+|---|---|---|
+| 💬 **Chat** | Ask natural-language questions about your users and metrics | **No — read-only, always** |
+| ✉️ **Mail** | Describe an audience, review a generated draft, approve, dispatch | Only after explicit human approval |
+
+Currently, MongoDB is the only supported database.
+
+---
+
+## 🏗️ Architecture
+
+LookOut is split into four cleanly decoupled layers: a React dashboard, a thin FastAPI HTTP layer, two purpose-built agents with different tool access, and the data/delivery layer they're allowed to touch.
+
+```mermaid
+flowchart LR
+    subgraph Client
+        UI["React Dashboard<br/>Chat · Mail · Settings"]
+    end
+
+    subgraph Server
+        FA["FastAPI"]
+    end
+
+    subgraph Agents
+        CA["Chat Agent<br/>(read-only)"]
+        MA["Mail Agent<br/>(find_users only)"]
+    end
+
+    subgraph Tools
+        CT["chat_tools.py"]
+        MT["tools.py"]
+        SM["sendMail<br/>(deterministic, human-gated)"]
+    end
+
+    subgraph Data
+        DB[("MongoDB<br/>primary + enrichment")]
+        CFG[("_lookout_config")]
+    end
+
+    ESP["Brevo SMTP"]
+
+    UI <--> FA
+    FA --> CA
+    FA --> MA
+    CA --> CT
+    MA --> MT
+    CT --> DB
+    MT --> DB
+    FA -. human approval .-> SM
+    SM --> ESP
+    FA <--> CFG
+```
+
+The key structural decision: **the Chat Agent and Mail Agent are never the same agent, and neither is ever given `sendMail` directly.** Sending is deterministic backend code, invoked only after a human clicks approve — not a capability either LLM holds.
+
+---
+
+## 🔁 Execution Flow
+
+### Mail Mode — targeting to dispatch
+
+```mermaid
+flowchart TD
+    A["Natural language prompt<br/>'mail top 20 Gmail users'"] --> B["Mail Agent interprets intent"]
+    B --> C["find_users tool<br/>builds MongoDB aggregation pipeline"]
+    C --> D["Matched users returned<br/>read-only"]
+    D --> E["LLM drafts one email template<br/>subject + body + placeholders"]
+    E --> F["Rendered preview<br/>real data filled in, one example"]
+    F --> G{"Human approves?"}
+    G -- No --> H["Rejected — nothing sent"]
+    G -- Yes --> I["Render per user<br/>pure Python, SafeDict"]
+    I --> J["sendMail via Brevo<br/>per recipient"]
+    J --> K["Dispatch result<br/>sent / failed / rejected"]
+```
+
+Note the shape of this pipeline: everything left of the approval diamond is either deterministic code or a single LLM call producing **one** template. Everything right of it is pure substitution and delivery — no further LLM involvement, so the one preview a human reviews is representative of every email that goes out.
+
+### Chat Mode — read-only, always
+
+```mermaid
+flowchart TD
+    A["Natural language question<br/>'how many users joined this week?'"] --> B["Chat Agent"]
+    B --> C{"Which tool?"}
+    C --> D["find_users"]
+    C --> E["count_users"]
+    C --> F["aggregate_stat"]
+    C --> G["find / count secondary documents"]
+    D --> H[("MongoDB — read-only")]
+    E --> H
+    F --> H
+    G --> H
+    H --> I["Formatted answer"]
+```
+
+There is no arrow out of this diagram toward Brevo or any write operation — the Chat Agent's toolset physically does not include one.
 
 ---
 
 ## ✨ Features
 
-- **Bring Your Own Database (BYODB):** Connect any MongoDB cluster and choose collections dynamically (currently, LookOut exclusively supports MongoDB).
-- **Dynamic Multi-Collection Joins:** 
-  - Supports **one-to-one** and **one-to-many** relationships.
-  - Employs a robust sub-pipeline `$lookup` (with sorting and `$limit: 1`) to eliminate row duplication issues while retaining enriched records.
-- **Dual-Collection Agent Querying:** 
-  - Dedicated tools allow the agent to query the primary collection (`userdetails`) and the secondary collection (`messages`) independently or joined.
-- **Interactive Setup Wizard:** 
-  - **Live Schema Preview:** Side-by-side JSON block updating dynamically as you map attributes.
-  - **Auto-Suggest Mapping:** Automated heuristic mapping to configure key fields.
-  - **Join Validation:** Instantly tests relationships and returns sample query results.
-- **Robust Local & Cloud Sync:** 
-  - Settings are preserved inside the workspace (`settings.json`) and synchronized to MongoDB (`_lookout_config`).
-- **Premium Monochrome Interface:** 
-  - Stunning pitch-black primary dark theme (`#000000`) with high-contrast text and interactive light mode toggle.
-- **Scope & Abuse Control:** 
-  - Prompt guardrails ensure the agent pivots trivia or general knowledge questions back to LookOut's analytical capabilities.
-
----
-
-## 📐 System Design & Architecture
-
-### System Topology
-
-```mermaid
-graph TD
-    subgraph Client Layer [Client Layer]
-        UI[React Dashboard<br>Vite + Tailwind v4]
-        CLI[Terminal UI<br>agent/cli.py]
-    end
-    
-    subgraph API Layer [API Layer]
-        FastAPI[FastAPI Server<br>backend/server.py]
-    end
-
-    subgraph Agent Core [Agent Core]
-        Agent[LangChain Agent<br>agent/chat_agent.py]
-        Campaign[Drafting Engine<br>agent/campaign/]
-    end
-
-    subgraph External & Database Integrations [External & Database Integrations]
-        MongoDB[(MongoDB Atlas<br>User Database)]
-        Brevo[Brevo API<br>SMTP Email Dispatch]
-        Groq[Groq API<br>LLM Reasoning]
-    end
-
-    UI <-->|REST / JSON| FastAPI
-    CLI <--> Agent
-    FastAPI <--> Agent
-    
-    Agent <--> Groq
-    Agent <--> MongoDB
-    Campaign <--> Groq
-    Agent -->|Dispatch| Brevo
-```
-
-### Execution Pipeline
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant App as Dashboard / CLI
-    participant Agent as LangChain Agent
-    participant DB as MongoDB
-    participant LLM as Groq LLM
-    participant Brevo as Brevo API
-
-    User->>App: "List messages sent by active users"
-    App->>Agent: Submit Prompt
-    
-    rect rgb(18, 18, 18)
-        Note right of Agent: Phase 1: Database Query & Join
-        Agent->>LLM: Parse intent and construct filters
-        LLM-->>Agent: Query filters & join keys
-        Agent->>DB: Execute Aggregation Lookup (sub-pipeline with limit 1)
-        DB-->>Agent: De-duplicated & enriched documents
-    end
-    
-    rect rgb(18, 18, 18)
-        Note right of Agent: Phase 2: Response Composition
-        Agent->>LLM: Synthesize raw data into readable markdown
-        LLM-->>Agent: Structured analytical markdown response
-        Agent-->>App: Display chat response & table preview
-    end
-```
+- **Bring Your Own Database (BYODB)** — connect any MongoDB cluster and choose your collections dynamically. MongoDB is the only supported database at this time.
+- **Dynamic multi-collection joins** — supports one-to-one and one-to-many relationships via a correlated `$lookup` sub-pipeline (see [Database Join Strategy](#-database-join-strategy)), avoiding row duplication on the one-to-many case.
+- **Dual-collection querying** — dedicated tools let the agent query the primary collection, the secondary (enrichment) collection, or a joined view of both.
+- **Interactive setup wizard** — live schema preview, auto-suggested field mapping, and instant join validation against a real sample record.
+- **Hybrid local + cloud settings sync** — configuration is written to `settings.json` for instant local access and synced to MongoDB under `_lookout_config` for durability.
+- **Premium monochrome interface** — high-contrast dark theme by default, with a light-mode toggle.
+- **Scope guardrails** — the Chat Agent politely declines and redirects off-topic trivia or general-knowledge questions back to your database.
 
 ---
 
 ## 📂 Project Structure
 
-```text
+```
 Lookout/
-├── agent/                    # 🧠 CORE AI ENGINE (Primary Logic)
-│   ├── core.py               # ➔ LangChain core logic for campaign discovery
-│   ├── chat_agent.py         # ➔ LangChain conversational analyst with prompt guardrails
-│   ├── chat_tools.py         # ➔ Specialized query tools (user queries, secondary/enrichment collection access)
-│   ├── tools.py              # ➔ Aggregation pipeline finders & Brevo SMTP integration
-│   ├── cli.py                # ➔ Standalone terminal CLI orchestrator
-│   ├── config.py             # ➔ Environment variables loader
-│   ├── config_store.py       # ➔ Hybrid file-system and MongoDB persistence managers
-│   ├── campaign/             
-│   │   ├── drafting.py       # ➔ Campaign template generation & dynamic placeholder injection
-│   │   └── models.py         # ➔ Strict Pydantic models (EmailTemplate, EmailDraft)
-│   ├── db/                   
-│   │   └── client.py         # ➔ PyMongo database clients
-│   └── ui/                   
-│       └── cli.py            # ➔ Terminal styling & spinner modules
+├── agent/                    # Core AI engine
+│   ├── core.py                # Mail-mode agent: LangChain + Groq, exposes find_users only
+│   ├── chat_agent.py           # Chat-mode agent: read-only tools + scope guardrails
+│   ├── chat_tools.py           # find_users, count_users, aggregate_stat, secondary-collection tools
+│   ├── tools.py                 # Aggregation pipeline builder + sendMail (Brevo)
+│   ├── cli.py                   # Standalone terminal orchestrator
+│   ├── config.py                # Environment variable loader
+│   ├── config_store.py          # Hybrid settings.json + MongoDB (_lookout_config) persistence
+│   ├── campaign/
+│   │   ├── drafting.py            # Template generation, HTML wrapper, SafeDict rendering
+│   │   └── models.py               # Pydantic models: EmailTemplate, EmailDraft, DispatchedResult
+│   ├── db/
+│   │   └── client.py               # PyMongo client, primary/secondary collection resolution
+│   └── ui/
+│       └── cli.py                   # Terminal styling and spinners
 │
-├── frontend/                 # 💻 REACT DASHBOARD (Vite + Tailwind v4 + Light Mode)
-├── backend/                  # 🔌 FASTAPI SERVER (Rest API Router)
-├── settings.json             # 💾 Local settings backup store (Auto-created)
-├── pyproject.toml            # 📦 Python project dependencies
-└── .env                      # 🔑 API credentials and secrets
+├── frontend/                  # React dashboard (Vite + Tailwind v4)
+├── backend/                   # FastAPI REST layer
+├── settings.json               # Local settings backup (auto-created)
+├── pyproject.toml               # Python dependencies
+└── .env                          # API credentials and secrets (never committed)
 ```
 
 ---
 
-## 📖 Detailed Codebase Reference
+## 🧠 Codebase Reference
 
-### 🧠 The Core Agent Layer (`agent/`)
+**`agent/core.py`** — Builds the Mail-mode agent: configures the system prompt with the mapped database attributes and initializes a LangChain agent on Groq. Exposes exactly one tool, `find_users`, which queries matched users, safely serializes MongoDB documents, and caches results in memory for the rest of the campaign flow.
 
-*   #### `agent/core.py`
-    Builds and initializes the campaign orchestration agent. It configures the system prompt with target database attributes and establishes a LangChain React agent using Groq. This agent exposes the `find_users` tool, which queries matched users, serializes MongoDB records safely, and stores them in a memory cache.
-*   #### `agent/chat_agent.py`
-    Defines the conversational AI data analyst. It configures the Groq model with specialized read-only query tools. The prompt features **Strict Scope Guardrails** that enforce database-centric replies and divert trivia, general knowledge, or math questions with a polite redirection.
-*   #### `agent/chat_tools.py`
-    Houses the database tools for conversational analytics:
-    *   `chat_find_users`: Performs user lookup with dynamic MongoDB `$lookup` sub-pipeline join mapping.
-    *   `count_users`: Aggregates the user count using matching search filters.
-    *   `aggregate_stat`: Calculates metric-specific math calculations (e.g. `sum`, `avg`, `min`, `max`) over selected database columns.
-    *   `find_secondary_documents` & `count_secondary_documents`: Directly inspects records in the joined enrichment collection (e.g., messages, orders, logs).
-*   #### `agent/tools.py`
-    Provides low-level implementation logic for:
-    *   `find_users`: Core MongoDB aggregation pipeline builder that executes structured search conditions.
-    *   `sendMail`: SMTP transactional mail dispatcher integrated with Brevo.
-    *   `query_cache`: Cache instance caching matched user records across campaign wizard steps.
-*   #### `agent/config_store.py`
-    Implements a **hybrid persistence system** for configurations:
-    *   Saves parameters locally into `settings.json` for instant developer access.
-    *   Synchronizes configurations to the active MongoDB cluster under the `_lookout_config` collection.
-    *   Loads settings dynamically on startup by checking both local files and cloud databases.
-    *   Implements connection testing, relationship lookups, and auto-suggest field mapping rules.
-*   #### `agent/campaign/drafting.py`
-    Wraps campaigns inside a premium responsive HTML email wrapper and implements `SafeDict` template formatting to prevent rendering errors caused by missing user attributes.
-*   #### `agent/campaign/models.py`
-    Enforces strict Pydantic v2 schemas validating configuration models (`EmailTemplate`, `EmailDraft`, and `DispatchedResult`).
-*   #### `agent/db/client.py`
-    Initializes MongoClient connections lazily and provides helper functions to resolve primary and secondary collection handlers.
+**`agent/chat_agent.py`** — Defines the conversational data analyst. Configures the model with read-only query tools only, and enforces scope guardrails that keep responses database-centric, politely redirecting trivia or unrelated questions.
 
-### 🔌 The API Wrapper Layer (`backend/`)
+**`agent/chat_tools.py`** — The Chat mode toolset:
+- `chat_find_users` — user lookup with dynamic join mapping
+- `count_users` — counts matching a filter
+- `aggregate_stat` — avg / sum / min / max over a numeric field
+- `find_secondary_documents` / `count_secondary_documents` — direct inspection of the enrichment collection
 
-*   #### `backend/server.py`
-    The FastAPI application serving as the integration bridge between the React frontend and the Python agent. It exposes endpoints for:
-    *   `/api/settings`: Saving and fetching setup configurations.
-    *   `/api/databases` & `/api/collections/{db}`: Discovering databases and collections.
-    *   `/api/check-join`: Validating primary/secondary key relations.
-    *   `/api/suggest-mapping`: Guessing field mappings using heuristic key match scoring.
-    *   `/api/chat`: Sending messages to the conversational agent.
-    *   `/api/campaign/target`: Invoking the campaign targeting step.
-    *   `/api/campaign/draft`: Invoking the email drafting step.
-    *   `/api/campaign/dispatch`: Dispatching emails and tracking real-time status.
+**`agent/tools.py`** — Low-level implementation: the aggregation pipeline builder behind `find_users`, the `sendMail` Brevo dispatcher, and an in-memory query cache shared across the campaign wizard's steps.
 
-### 💻 The Frontend Dashboard (`frontend/`)
+**`agent/config_store.py`** — Hybrid persistence: writes to `settings.json` for instant local access, syncs to `_lookout_config` in MongoDB, and loads from either source on startup. Also implements connection testing, join relationship checks, and heuristic field-mapping suggestions.
 
-*   #### `frontend/src/App.jsx`
-    The top-level state manager. It handles view switching (Setup wizard vs. main workspace), mode switching (Chat vs. Mail vs. Settings), and registers the light/dark theme preference inside `localStorage`.
-*   #### `frontend/src/components/SetupView.jsx`
-    A stepped onboarding form that walks users through connecting database, mapping fields with Auto-Suggest, testing joins, and configuring SMTP. Features a live schema preview panel reflecting mapped keys in real-time.
-*   #### `frontend/src/components/ChatView.jsx`
-    The conversational interface for database queries. Renders markdown responses, lists, and tables with interactive states.
-*   #### `frontend/src/components/MailView.jsx`
-    A stepped campaign orchestrator that shows targeting results, lets users edit templates, shows rendered HTML previews, and runs dispatch actions.
-*   #### `frontend/src/components/TopBar.jsx`
-    Renders status indicators, switcher tabs, theme toggling, and settings navigation.
-*   #### `frontend/src/index.css`
-    Declares custom Tailwind v4 theme configurations, custom fonts (Inter), and sets up the pitch-black and clean white color themes.
+**`agent/campaign/drafting.py`** — Wraps generated copy in a responsive HTML email shell and applies `SafeDict` substitution so a missing user attribute never raises an error — it leaves the literal placeholder instead of crashing the render.
+
+**`agent/campaign/models.py`** — Strict Pydantic v2 schemas: `EmailTemplate`, `EmailDraft`, `DispatchedResult`.
+
+**`agent/db/client.py`** — Lazily initializes the MongoDB client and resolves primary/secondary collection handles.
+
+**`backend/server.py`** — The FastAPI bridge between the dashboard and the agent layer:
+
+| Endpoint | Purpose |
+|---|---|
+| `/api/settings` | Save and fetch setup configuration |
+| `/api/databases`, `/api/collections/{db}` | Discover databases and collections |
+| `/api/check-join` | Validate a primary/secondary key relationship |
+| `/api/suggest-mapping` | Heuristic field-mapping suggestions |
+| `/api/chat` | Send a message to the Chat Agent |
+| `/api/campaign/target` | Run the targeting step |
+| `/api/campaign/draft` | Generate the email template |
+| `/api/campaign/dispatch` | Send approved emails, tracking live status |
+
+**`frontend/src/App.jsx`** — Top-level state manager: view switching (setup vs. workspace), mode switching (Chat / Mail / Settings), and theme persistence.
+
+**`frontend/src/components/SetupView.jsx`** — Stepped onboarding: database connection, field mapping with auto-suggest, join testing, SMTP configuration, with a live schema preview panel.
+
+**`frontend/src/components/ChatView.jsx`** — The conversational interface: renders markdown, lists, and tables from agent responses.
+
+**`frontend/src/components/MailView.jsx`** — The campaign orchestrator: targeting results, template editing, rendered HTML previews, and dispatch monitoring.
 
 ---
 
-## ⚙️ Setup and Installation
+## 🔗 Database Join Strategy
 
-Follow these steps to configure your environment and launch LookOut v2.
-
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- [uv](https://github.com/astral-sh/uv) (Python dependency manager)
-
----
-
-### Step 1: Clone and Initialize
-```bash
-git clone https://github.com/itslokeshx/Lookout.git
-cd Lookout
-```
-
-### Step 2: Set Up Python Virtual Environment
-Use `uv` to create a virtual environment and synchronize dependencies:
-```bash
-# Install virtual environment and dependencies
-uv sync
-source .venv/bin/activate
-```
-
-### Step 3: Configure Environment Variables
-Create a `.env` file at the root of the project:
-```bash
-cp .env.example .env
-```
-Populate the variables:
-```env
-GROQ_API_KEY=gsk_your_groq_api_key_here
-BREVO_API_KEY=xkeysib-your_brevo_key_here
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
-```
-
-> [!TIP]
-> **LLM Model Recommendations (Free Tier):**
-> * **`openai/gpt-oss-120b`** — Default production model
-> * **`llama-3.3-70b-versatile`** — Quality + lower cost option
-
-### Step 4: Install Frontend Dependencies
-```bash
-cd frontend
-npm install
-cd ..
-```
-
----
-
-## 🏃 Running LookOut
-
-Open two terminals or background tabs to run the services concurrently:
-
-### Terminal 1: Backend FastAPI Server
-```bash
-# Ensure you are at the project root and virtualenv is active
-.venv/bin/uvicorn backend.server:app --reload --port 8000
-```
-
-### Terminal 2: React Vite Dashboard
-```bash
-cd frontend
-npm run dev
-```
-
-Visit **`http://localhost:5173`** in your browser.
-
----
-
-## 🛠️ Step-by-Step Dashboard Onboarding & Collection Mapping
-
-When you open `http://localhost:5173` for the first time, you will be guided through a 3-step setup wizard to configure the agent's target database context:
-
-### 1️⃣ Step 1: Database & Collection Join Configuration
-Configure where the agent retrieves data and how collections relate:
-* **Number of Collections:** Choose between **1 Collection** (if user details and activities are in a single place) or **2 Collections (Join / Enrichment)** (if you want the agent to enrich user records with dynamic metrics like messages, orders, or logs from a separate collection).
-* **Database:** Select from the dropdown of auto-discovered databases found on your active MongoDB cluster.
-* **Primary Collection (Users):** Select the collection that holds the core user records (typically containing `username`, `email`, etc.).
-* **Secondary Collection (Enrichment):** *(Visible only if 2 Collections is selected)* Select the collection holding relational details to join.
-* **Join Configuration (Key Mapping):**
-  - **Local Key (primary):** The identifier field in your primary collection (usually `_id` or `username`).
-  - **Foreign Key (secondary):** The key in the secondary collection that maps back to the primary collection's local key (e.g. `userId` or `username`).
-* **Check Relationship Validation:** Click this button to test the join keys instantly. The system queries a sample record and attempts to resolve a matching document. It reports exactly how many matches were found for the test value (e.g. `one-to-one (1 matches for sample value)` or warnings if 0 matches exist), ensuring your mapping is correct.
-* **Product Name:** Define your product's name (e.g., `Chatty` or `SoulSync`). This aligns the AI's agentic context and sets email template signatures.
-
-### 2️⃣ Step 2: Intelligent Field Mapping
-Configure which attributes represent identities, metrics, and additional context:
-* **Email Field & Name Field:** Select the properties that represent the user's email address and display name. If you are unsure, click **Auto-suggest** to run a heuristic matching algorithm over your collection schema.
-* **Join Date & Last Active Field:** (Optional) Map timestamps indicating when users joined and their last session activity.
-* **Numeric Metrics:** Project numeric stats that the agent can aggregate (e.g. field `totalListeningTime`, Custom Label `Listened Time`, unit `sec`). The agent uses these mappings to dynamically compute `avg`, `sum`, `min`, or `max`.
-* **Custom Extra Fields:** Input any additional schema fields you want the agent to query and view (e.g. `authProvider`, `role`, `status`, or attributes from your joined secondary collection like `text` or `count`).
-* **Live Schema Preview:** As you define mappings, the side-panel displays the exact JSON structure that the LookOut agent queries, letting you verify configurations in real-time.
-
-### 3️⃣ Step 3: Sender Configuration
-Configure the SMTP sending identity used when dispatching campaigns:
-* **Sender Name & Sender Email:** Define the default name and email address that recipients will see in campaign dispatches.
-* **Save / Complete Setup:** Compiles the configuration, writes it to `settings.json`, syncs it to MongoDB Atlas under `_lookout_config` for cloud redundancy, and unlocks the Chat & Mail dashboards.
-
----
-
-## 🎮 Dashboard Interface Modes
-
-LookOut's dashboard features a dual-mode workflow switcher designed for both interactive exploration and structured workflow orchestration:
-
-### 💬 Chat Mode: The Conversational Database Analyst
-Chat Mode is a read-only playground designed for dynamic data exploration:
-* **Interactive Tooling:** The underlying agent is equipped with five query tools (`chat_find_users`, `count_users`, `aggregate_stat`, `count_secondary_documents`, `find_secondary_documents`) to pull counts, run statistics, filter, and inspect collection schemas.
-* **Scope Guardrails:** Safe prompt filters prevent off-topic trivia abuse (e.g. queries about cricket players, celebrities, or unrelated math). If a general-knowledge prompt is detected, the agent replies with a brief statement and pivots the conversation back to your user database.
-* **Smart UI Rendering:** Displays database records, totals, average metrics, and join relationship tables formatted cleanly.
-
-### ✉️ Mail Mode: The Campaign Orchestration Pipeline
-Mail Mode guides you through a strict four-stage wizard to discover users, draft personalized emails, and send SMTP dispatches:
-1. **Targeting:** Describe your target audience in plain English (e.g., *"users who joined in the last 30 days and have 0 messages"*). The agent dynamically builds filters and returns the matching user count and details.
-2. **Template Generation:** The agent automatically drafts a personalized email campaign (Subject & Body copy) tailored to the audience context.
-3. **Review & Preview:** Browse through individual preview cards of your matching users. LookOut dynamically renders the exact HTML output showing how dynamic placeholder values (such as `{username}` or custom metrics) are safely injected for each recipient.
-4. **SMTP Dispatch:** Runs transactional email delivery using the configured Brevo SMTP details. You can monitor progress with a live status bar showing successful/failed dispatches, with results saved to your local **Dispatch History**.
-
----
-
-## 📊 Database Join Strategy
-
-To support multi-collection joins without document duplication, LookOut v2 uses a specialized `$lookup` sub-pipeline rather than simple localField/foreignField matching:
+Simple `$lookup` + `$unwind` duplicates a primary user's row once per matching secondary document — a problem the moment a relationship is one-to-many. LookOut instead uses a correlated sub-pipeline that sorts and limits *inside* the lookup, resolving the join to exactly one enrichment record per user before it ever reaches the result set:
 
 ```python
 lookup_pipeline = [
@@ -373,7 +264,7 @@ lookup_pipeline = [
 if sort_field:
     sort_dir = -1 if not sort_ascending else 1
     lookup_pipeline.append({"$sort": {sort_field: sort_dir}})
-lookup_pipeline.append({"$limit": 1}) # Resolves one-to-many into exactly one record
+lookup_pipeline.append({"$limit": 1})  # collapses one-to-many into exactly one record
 
 pipeline.append({
     "$lookup": {
@@ -385,46 +276,130 @@ pipeline.append({
 })
 ```
 
----
-
-## 📊 Testing & Benchmarks
-
-LookOut has been validated against a real production workload using the **SoulSync** streaming platform. The objective was to measure reliability, personalization quality, and end-to-end campaign execution under realistic conditions.
-
-### Mass Announcement Campaign Benchmark
-*   **Campaign Prompt:** *"Mail every Gmail user informing them that SoulSync Wrapper is now available."*
-*   **Users Matched:** 101 users
-*   **Total Dispatch Time:** 94.75 seconds (~0.93s average per email)
-*   **Failed Requests / Delivery Success:** 0 failures (100% SMTP API acceptance)
-
-### Functional Validation & Reliability
-*   **ReadOnly Protection:** Zero database write operations were performed during discovery; user targeting remains strictly read-only.
-*   **Safety Check:** Every campaign requires explicit human review and approval before any dispatch actions are taken.
-*   **Feature Verification:** Dynamic MongoDB query retrieval (✅), custom key joins (✅), personalized draft generation (✅), and Brevo SMTP dispatch (✅) all validated successfully.
-
-### System Configuration
-*   **Tested Dataset:** 101 users
-*   **Database:** MongoDB Atlas
-*   **LLM Provider:** GPT-OSS-120B (Cerebras)
-*   **Email Provider:** Brevo Transactional Email API
+No duplicate rows, no silent data loss, and the sort/limit behavior is explicit and configurable per relationship — not an accidental side effect of how Mongo happens to expand an array.
 
 ---
 
-## 🤝 Contributing & Open Source
+## ⚙️ Setup & Installation
 
-LookOut is fully open-source and we welcome contributors of all skill levels! Whether you want to fix a bug, optimize the agent's prompts, add support for more database types, or build integrations for other email providers, your help is highly appreciated.
+**Prerequisites:** Python 3.12+, Node.js 18+, [uv](https://github.com/astral-sh/uv)
 
-### How to Contribute:
-1. **Fork the Repository:** Create a copy of this project on your GitHub account.
-2. **Create a Feature Branch:** `git checkout -b feature/amazing-feature`
-3. **Commit Your Changes:** `git commit -m 'Add some amazing feature'`
-4. **Push to Branch:** `git push origin feature/amazing-feature`
-5. **Open a Pull Request:** Submit your changes for review!
+```bash
+git clone https://github.com/itslokeshx/Lookout.git
+cd Lookout
+```
 
-Feel free to open an issue if you encounter bugs or want to suggest new features. Let's make database analytics and campaigns entirely autonomous together!
+**Python environment:**
+```bash
+uv sync
+source .venv/bin/activate
+```
+
+**Environment variables:**
+```bash
+cp .env.example .env
+```
+```
+GROQ_API_KEY=gsk_your_groq_api_key_here
+BREVO_API_KEY=xkeysib-your_brevo_key_here
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
+```
+
+> **Model recommendation (free tier):** `openai/gpt-oss-120b` for production quality, `llama-3.3-70b-versatile` as a faster/cheaper alternative.
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+**Run it** (two terminals):
+```bash
+# Terminal 1 — API
+.venv/bin/uvicorn backend.server:app --reload --port 8000
+
+# Terminal 2 — Dashboard
+cd frontend && npm run dev
+```
+
+Visit `http://localhost:5173`.
+
+---
+
+## 🧙 Dashboard Onboarding & Setup Wizard
+
+**Step 1 — Database & Join Configuration**
+Choose 1 collection (everything in one place) or 2 collections (join/enrichment). Select your database and primary collection from auto-discovered options. If using two collections, map the local key (usually `_id`) to the foreign key in your secondary collection, then click **Check Relationship Validation** — LookOut queries a real sample record and reports exactly how many matches it found, catching a bad mapping before it ever reaches a live campaign.
+
+**Step 2 — Intelligent Field Mapping**
+Map email and name fields (or click **Auto-suggest** to run a heuristic match over your schema), optionally map join-date and last-active fields, and project any numeric metrics you want the agent to aggregate. A live schema preview panel shows the exact JSON structure LookOut will query, updating as you go.
+
+**Step 3 — Sender Configuration**
+Set the sender name and address recipients will see. Saving compiles everything into `settings.json` and syncs it to `_lookout_config` in MongoDB, then unlocks the dashboard.
+
+---
+
+## 🎮 Dashboard Modes
+
+**💬 Chat Mode** — A read-only playground for data exploration. Five query tools (`chat_find_users`, `count_users`, `aggregate_stat`, `find_secondary_documents`, `count_secondary_documents`) handle counts, statistics, filtering, and schema inspection. Scope guardrails redirect off-topic questions back to your data. Responses render as formatted tables, totals, and summaries.
+
+**✉️ Mail Mode** — A four-stage wizard:
+1. **Targeting** — describe your audience in plain English; the agent builds filters and returns a match count.
+2. **Template generation** — the agent drafts one subject/body pair for the audience.
+3. **Review & preview** — browse individual recipient cards showing the exact rendered HTML, placeholders already filled with real data.
+4. **Dispatch** — sends via Brevo with a live progress bar, results saved to your local dispatch history.
+
+---
+
+## 📊 Benchmarks
+
+Tested against a real production dataset from SoulSync.
+
+**Campaign:** "Mail every Gmail user informing them that SoulSync Wrapper is now available."
+
+| Metric | Result |
+|---|---|
+| Users matched | 101 |
+| Total dispatch time | 94.75s (~0.93s/email) |
+| Failed deliveries | 0 (100% SMTP acceptance) |
+| Write operations during targeting | 0 |
+
+**Environment:** MongoDB Atlas · GPT-OSS-120B (Cerebras) · Brevo Transactional Email API
+
+---
+
+## 🛡️ Safety & Design Principles
+
+The single design decision this whole project is built around: **an LLM may propose, draft, or suggest — it never decides or executes anything that touches real data or sends anything, without a human in between.**
+
+Concretely:
+
+- **Ranking is deterministic.** Users are never selected by an LLM's judgment — a plain aggregation pipeline sorts and filters, with no model involved in *who* gets targeted.
+- **Tool access is structurally scoped, not just prompted.** The Chat Agent's toolset contains no write or send capability at all — it is not instructed to avoid sending, it is incapable of it. The Mail Agent has exactly one tool, `find_users`; `sendMail` is never handed to any LLM-driven agent, ever.
+- **Every dispatch requires a human decision.** No campaign reaches an inbox without an explicit approval step.
+- **The preview is always real.** Approval happens against a rendered example with actual recipient data — never a raw template with unfilled placeholders — so what you approve is what gets sent.
+- **Templates can't crash on missing data.** `SafeDict` substitution means an absent field renders as literal placeholder text instead of raising an error mid-campaign.
+- **Field mappings and joins are always human-confirmed.** Auto-suggestions (from heuristics or an LLM) are exactly that — suggestions. Nothing is saved or queried against until a person reviews and confirms it, using a real sample record as evidence.
+
+---
+
+## 🤝 Contributing
+
+LookOut is fully open-source and welcomes contributors of any experience level — bug fixes, prompt improvements, new database support, or additional email provider integrations.
+
+```bash
+# Fork, then:
+git checkout -b feature/amazing-feature
+git commit -m "Add some amazing feature"
+git push origin feature/amazing-feature
+# Open a pull request
+```
+
+Found a bug or have an idea? Open an issue.
 
 ---
 
 ## 📄 License
 
-LookOut is open-source software licensed under the [MIT License](LICENSE).
+MIT — see [LICENSE](./LICENSE).
