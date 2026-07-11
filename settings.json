@@ -21,8 +21,7 @@
     "isEmailVerified",
     "preferences.languages",
     "preferences.eras",
-    "preferences.moods",
-    "likedSongs"
+    "preferences.moods"
   ],
   "sender_name": "Soulsync",
   "sender_email": "lokeshvijayraina@gmail.com",

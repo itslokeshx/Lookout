@@ -45,59 +45,61 @@ export default function MatchedUsersTable({ users = [], prompt = '', settings = 
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-surface-raised">
-              <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                #
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                Name
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                Email
-              </th>
-              {metrics.map((m) => (
-                <th key={m.field} className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                  {m.label || m.field}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[500px]">
+            <thead>
+              <tr className="border-b border-border bg-surface-raised">
+                <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+                  #
                 </th>
-              ))}
-              {hasJoinDate && (
-                <th className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                  Joined
+                <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+                  Name
                 </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user, i) => (
-              <tr
-                key={user[emailField] || i}
-                className="border-b border-border last:border-b-0 transition-colors duration-150 hover:bg-surface-hover"
-              >
-                <td className="py-3 px-4 text-text-tertiary text-xs tabular-nums">
-                  {user.rank || i + 1}
-                </td>
-                <td className="py-3 px-4 text-text-primary font-medium">
-                  {user[nameField] || user.name || user.username || '—'}
-                </td>
-                <td className="py-3 px-4 text-text-secondary font-mono text-xs">
-                  {user[emailField] || user.email}
-                </td>
+                <th className="text-left py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+                  Email
+                </th>
                 {metrics.map((m) => (
-                  <td key={m.field} className="py-3 px-4 text-right text-text-secondary tabular-nums">
-                    {formatMetricValue(user[m.field], m.unit)}
-                  </td>
+                  <th key={m.field} className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+                    {m.label || m.field}
+                  </th>
                 ))}
                 {hasJoinDate && (
-                  <td className="py-3 px-4 text-right text-text-secondary text-xs">
-                    {formatDate(user[joinedField] || user.joinDate || user.createdAt)}
-                  </td>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
+                    Joined
+                  </th>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((user, i) => (
+                <tr
+                  key={user[emailField] || i}
+                  className="border-b border-border last:border-b-0 transition-colors duration-150 hover:bg-surface-hover"
+                >
+                  <td className="py-3 px-4 text-text-tertiary text-xs tabular-nums">
+                    {user.rank || i + 1}
+                  </td>
+                  <td className="py-3 px-4 text-text-primary font-medium">
+                    {user[nameField] || user.name || user.username || '—'}
+                  </td>
+                  <td className="py-3 px-4 text-text-secondary font-mono text-xs">
+                    {user[emailField] || user.email}
+                  </td>
+                  {metrics.map((m) => (
+                    <td key={m.field} className="py-3 px-4 text-right text-text-secondary tabular-nums">
+                      {formatMetricValue(user[m.field], m.unit)}
+                    </td>
+                  ))}
+                  {hasJoinDate && (
+                    <td className="py-3 px-4 text-right text-text-secondary text-xs whitespace-nowrap">
+                      {formatDate(user[joinedField] || user.joinDate || user.createdAt)}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
