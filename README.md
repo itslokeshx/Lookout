@@ -13,10 +13,7 @@
 
 [Quick Start](#quick-start) · [Architecture](#architecture) · [How It Works](#how-it-works) · [Design Decisions](#design-decisions)
 
-<br/>
-<br/>
 
-<video src="https://github.com/itslokeshx/Lookout/raw/main/assets/demo.mp4" controls></video>
 
 </div>
 
