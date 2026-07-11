@@ -201,7 +201,9 @@ BREVO_API_KEY=...      # app.brevo.com → SMTP & API
 MONGODB_URI=...        # your Atlas connection string
 ```
 
-Lookout automatically handles fallback between up to 3 Groq API keys (e.g. if the primary key hits a rate limit or token limit, it transparently retries using the second and third keys).
+Lookout automatically handles fallback between up to 3 Groq API keys (e.g. if the primary key hits a rate limit or token limit, it transparently retries using the second and third keys). This allows you to easily scale past free tier limitations by providing up to three free keys.
+
+Similarly, if you hit Brevo's daily free sending limit, you can update your `BREVO_API_KEY` in the `.env` file to another free account key and restart the server to resume sending.
 
 **3. Run**
 
