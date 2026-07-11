@@ -13,8 +13,6 @@
 
 [Quick Start](#quick-start) · [Architecture](#architecture) · [How It Works](#how-it-works) · [Design Decisions](#design-decisions)
 
-
-
 </div>
 
 <br/>
