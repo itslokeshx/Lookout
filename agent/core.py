@@ -1,4 +1,4 @@
-from langchain_groq import ChatGroq
+from agent.llm import ChatGroq
 from langchain.agents import create_agent
 
 from agent.config import GROQ_API_KEY
