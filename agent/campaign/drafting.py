@@ -141,7 +141,7 @@ def to_html(draft: EmailDraft) -> str:
 <td style="padding:36px 44px 28px;background:linear-gradient(135deg,#18182a 0%,#1e1b3a 50%,#1a1632 100%);border-bottom:1px solid rgba(255,255,255,0.06);">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td>
-<span style="font-size:22px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.3px;">{product}</span>
+<span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">{product}</span>
 </td>
 </tr></table>
 </td>
