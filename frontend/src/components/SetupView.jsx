@@ -114,6 +114,7 @@ export default function SetupView({ existingSettings, onComplete }) {
   // Suggestions state
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestionApplied, setSuggestionApplied] = useState(false);
+  const [excludedFields, setExcludedFields] = useState([]);
 
   // Sender details
   const [senderName, setSenderName] = useState(existingSettings?.sender_name || '');
@@ -183,7 +184,6 @@ export default function SetupView({ existingSettings, onComplete }) {
         last_active: result.fields.last_active_field || '',
       });
 
-      // Unify suggestions into customFields list
       const suggestedList = [];
       const suggestedMetrics = result.metrics || [];
       suggestedMetrics.forEach((m) => {
@@ -195,7 +195,6 @@ export default function SetupView({ existingSettings, onComplete }) {
           suggestedList.push({ field: f, label: '', unit: '' });
         }
       });
-      // Pad to at least 2 custom fields
       while (suggestedList.length < 2) {
         suggestedList.push({ field: '', label: '', unit: '' });
       }
@@ -209,6 +208,7 @@ export default function SetupView({ existingSettings, onComplete }) {
           reason: result.join.reason || '',
         }));
       }
+      setExcludedFields(result.excluded_fields || []);
       setSuggestionApplied(true);
     } catch (err) {
       setError(err.message);
@@ -532,6 +532,18 @@ export default function SetupView({ existingSettings, onComplete }) {
                 <p className="text-xs text-accent">
                   AI suggestion applied. Review and adjust mappings below.
                 </p>
+              </div>
+            )}
+
+            {excludedFields.length > 0 && (
+              <div className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2.5 flex items-start gap-2 text-warning">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold">Large fields excluded</p>
+                  <p className="text-[11px] text-text-tertiary mt-0.5">
+                    Excluded fields with heavy/nested data to optimize performance and prevent token limit issues: <span className="font-mono text-warning/90 font-medium">{excludedFields.join(', ')}</span>.
+                  </p>
+                </div>
               </div>
             )}
 

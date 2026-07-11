@@ -28,16 +28,47 @@ class MappingSuggestion(BaseModel):
     metrics: list[MetricSuggestion] = Field(default_factory=list)
     extra_fields: list[str] = Field(default_factory=list, description="Categorical or details fields (e.g. authProvider, role, status) to project")
     join: JoinSuggestion | None = None
+    excluded_fields: list[str] = Field(default_factory=list)
+
+
+def filter_large_fields(doc: dict) -> tuple[dict, list[str]]:
+    filtered = {}
+    excluded = []
+    if not doc:
+        return filtered, excluded
+
+    for k, v in doc.items():
+        is_large = False
+        if isinstance(v, list):
+            if len(v) > 3 or any(isinstance(x, (dict, list)) for x in v) or len(str(v)) > 150:
+                is_large = True
+        elif isinstance(v, dict):
+            if len(str(v)) > 300:
+                is_large = True
+        elif isinstance(v, str):
+            if len(v) > 150:
+                is_large = True
+
+        if is_large:
+            excluded.append(k)
+        else:
+            filtered[k] = v
+
+    return filtered, excluded
 
 
 def suggest_field_mapping(
     primary_sample: dict,
     secondary_sample: dict | None = None,
 ) -> MappingSuggestion:
+    clean_primary, excluded_primary = filter_large_fields(primary_sample)
+    clean_secondary, excluded_secondary = filter_large_fields(secondary_sample or {})
+    excluded = list(set(excluded_primary + excluded_secondary))
+
     llm = ChatGroq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
     structured_llm = llm.with_structured_output(MappingSuggestion)
 
-    primary_fields = _describe_fields(primary_sample)
+    primary_fields = _describe_fields(clean_primary)
 
     prompt_parts = [
         "Analyze this MongoDB document and suggest field mappings.",
@@ -55,7 +86,7 @@ def suggest_field_mapping(
     ]
 
     if secondary_sample:
-        secondary_fields = _describe_fields(secondary_sample)
+        secondary_fields = _describe_fields(clean_secondary)
         prompt_parts.extend([
             "",
             "Secondary collection sample document fields:",
@@ -64,7 +95,9 @@ def suggest_field_mapping(
             "7. Identify the most likely join key between the two collections and explain why.",
         ])
 
-    return structured_llm.invoke("\n".join(prompt_parts))
+    suggestion = structured_llm.invoke("\n".join(prompt_parts))
+    suggestion.excluded_fields = excluded
+    return suggestion
 
 
 def _describe_fields(doc: dict, prefix: str = "") -> str:

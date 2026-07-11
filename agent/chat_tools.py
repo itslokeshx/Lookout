@@ -6,6 +6,20 @@ from agent.db.client import get_users_collection
 from agent.tools import clean_projection
 
 
+def _compact_value(val):
+    if isinstance(val, list):
+        if not val:
+            return []
+        if len(val) > 3 or any(isinstance(x, (dict, list)) for x in val) or len(str(val)) > 150:
+            return f"[{len(val)} items]"
+        return [_compact_value(x) for x in val]
+    elif isinstance(val, dict):
+        return {k: _compact_value(v) for k, v in val.items()}
+    elif isinstance(val, str) and len(val) > 150:
+        return val[:147] + "..."
+    return val
+
+
 @tool
 def chat_find_users(
     filters: dict | None = None,
@@ -93,7 +107,7 @@ def chat_find_users(
         cursor = cursor.limit(limit)
 
     from agent.config_store import _serialize_doc
-    users = [_serialize_doc(u) for u in cursor]
+    users = [_compact_value(_serialize_doc(u)) for u in cursor]
     if not users:
         return "No users found matching those criteria."
 
@@ -332,7 +346,7 @@ def find_secondary_documents(
     cursor = cursor.limit(limit)
 
     from agent.config_store import _serialize_doc
-    docs = [_serialize_doc(d) for d in cursor]
+    docs = [_compact_value(_serialize_doc(d)) for d in cursor]
     if not docs:
         return f"No documents found in secondary collection '{settings.enrichment.collection}' matching those criteria."
 
