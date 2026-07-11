@@ -13,6 +13,11 @@
 
 [Quick Start](#quick-start) · [Architecture](#architecture) · [How It Works](#how-it-works) · [Design Decisions](#design-decisions)
 
+<br/>
+<br/>
+
+<video src="assets/demo.mp4" width="100%" controls></video>
+
 </div>
 
 <br/>
