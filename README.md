@@ -16,7 +16,7 @@
 <br/>
 <br/>
 
-<video src="assets/demo.mp4" width="100%" controls></video>
+<video src="https://github.com/itslokeshx/Lookout/raw/main/assets/demo.mp4" controls></video>
 
 </div>
 
