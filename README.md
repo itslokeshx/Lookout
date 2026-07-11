@@ -194,10 +194,14 @@ cp .env.example .env
 ```
 
 ```
-GROQ_API_KEY=...     # console.groq.com
-BREVO_API_KEY=...    # app.brevo.com → SMTP & API
-MONGODB_URI=...      # your Atlas connection string
+GROQ_API_KEY=...       # Primary Groq API Key
+GROQ_API_KEY_2=...     # Secondary fallback key (optional)
+GROQ_API_KEY_3=...     # Tertiary fallback key (optional)
+BREVO_API_KEY=...      # app.brevo.com → SMTP & API
+MONGODB_URI=...        # your Atlas connection string
 ```
+
+Lookout automatically handles fallback between up to 3 Groq API keys (e.g. if the primary key hits a rate limit or token limit, it transparently retries using the second and third keys).
 
 **3. Run**
 
