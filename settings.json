@@ -24,7 +24,8 @@
     "preferences.moods"
   ],
   "sender_name": "Soulsync",
-  "sender_email": "lokeshvijayraina@gmail.com",
+  "sender_email": "soulsyncplatform@gmail.com",
+  "email_provider": "brevo",
   "enrichment": null,
   "product_name": "Soulsync",
   "setup_complete": true

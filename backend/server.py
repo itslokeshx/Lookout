@@ -64,6 +64,7 @@ class SaveSettingsRequest(BaseModel):
     extra_fields: list[str] = Field(default_factory=list)
     sender_name: str = ""
     sender_email: str = ""
+    email_provider: str = "brevo"
     product_name: str = ""
     enrichment: dict | None = None
 
@@ -98,6 +99,7 @@ async def update_settings(req: SaveSettingsRequest):
         extra_fields=[f for f in req.extra_fields if f.strip()],
         sender_name=req.sender_name,
         sender_email=req.sender_email,
+        email_provider=req.email_provider,
         product_name=req.product_name,
         enrichment=JoinConfig(**req.enrichment) if req.enrichment else None,
         setup_complete=True,

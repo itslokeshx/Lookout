@@ -197,30 +197,72 @@ def _send_email(receiver: str, subject: str, body: str) -> str:
     import time as _time
 
     settings = load_settings()
-    configuration = sib_api_v3_sdk.Configuration()
-    configuration.api_key["api-key"] = BREVO_API_KEY
+    provider = getattr(settings, "email_provider", "brevo")
 
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-                sib_api_v3_sdk.ApiClient(configuration)
-            )
-            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-                sender={"name": settings.sender_name, "email": settings.sender_email},
-                to=[{"email": receiver}],
-                subject=subject,
-                html_content=body,
-            )
-            api_response = api_instance.send_transac_email(send_smtp_email)
-            return f"Sent to {receiver} (id: {api_response.message_id})"
-        except ApiException as e:
-            return f"Failed: {e}"
-        except Exception as e:
-            if attempt < max_retries - 1:
-                _time.sleep(1 * (attempt + 1))
-                continue
-            return f"Failed: Connection error after {max_retries} attempts: {e}"
+    if provider == "resend":
+        from agent.config import RESEND_API_KEY
+        if not RESEND_API_KEY:
+            return "Failed: RESEND_API_KEY environment variable is not set."
+        import resend
+        resend.api_key = RESEND_API_KEY
+
+        # For free public domains, send via onboarding@resend.dev to avoid DMARC rejection
+        sender_email = settings.sender_email
+        reply_to = None
+        if any(domain in sender_email.lower() for domain in ("@gmail.com", "@yahoo.com", "@outlook.com", "@hotmail.com")):
+            sender_email = "onboarding@resend.dev"
+            reply_to = settings.sender_email
+
+        from_str = f"{settings.sender_name} <{sender_email}>" if settings.sender_name else sender_email
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                params = {
+                    "from": from_str,
+                    "to": receiver,
+                    "subject": subject,
+                    "html": body,
+                }
+                if reply_to:
+                    params["reply_to"] = reply_to
+
+                r = resend.Emails.send(params)
+                return f"Sent to {receiver} (id: {r.get('id')})"
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    _time.sleep(1 * (attempt + 1))
+                    continue
+                return f"Failed: {e}"
+
+    else:
+        from agent.config import BREVO_API_KEY
+        if not BREVO_API_KEY:
+            return "Failed: BREVO_API_KEY environment variable is not set."
+        configuration = sib_api_v3_sdk.Configuration()
+        configuration.api_key["api-key"] = BREVO_API_KEY
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+                    sib_api_v3_sdk.ApiClient(configuration)
+                )
+                send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                    sender={"name": settings.sender_name, "email": settings.sender_email},
+                    to=[{"email": receiver}],
+                    subject=subject,
+                    html_content=body,
+                )
+                api_response = api_instance.send_transac_email(send_smtp_email)
+                return f"Sent to {receiver} (id: {api_response.message_id})"
+            except ApiException as e:
+                return f"Failed: {e}"
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    _time.sleep(1 * (attempt + 1))
+                    continue
+                return f"Failed: Connection error after {max_retries} attempts: {e}"
 
 
 @tool

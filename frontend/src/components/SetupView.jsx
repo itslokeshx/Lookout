@@ -119,6 +119,7 @@ export default function SetupView({ existingSettings, onComplete }) {
   // Sender details
   const [senderName, setSenderName] = useState(existingSettings?.sender_name || '');
   const [senderEmail, setSenderEmail] = useState(existingSettings?.sender_email || '');
+  const [emailProvider, setEmailProvider] = useState(existingSettings?.email_provider || 'brevo');
 
   // Enrichment
   const [enrichment, setEnrichment] = useState(existingSettings?.enrichment || {
@@ -264,6 +265,7 @@ export default function SetupView({ existingSettings, onComplete }) {
         extra_fields: finalExtras,
         sender_name: senderName,
         sender_email: senderEmail,
+        email_provider: emailProvider,
         product_name: productName,
         enrichment: numCollections === 2 ? enrichment : null,
       });
@@ -652,8 +654,48 @@ export default function SetupView({ existingSettings, onComplete }) {
         <div className="space-y-6 animate-slide-up">
           <div className="bg-surface-raised border border-border rounded-xl p-5 space-y-4">
             <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">Sender Details</span>
+            
+            {/* Email Provider Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-text-tertiary uppercase tracking-wider block">Email Service Provider</label>
+              <div className="flex gap-6 mt-1">
+                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="emailProvider"
+                    value="brevo"
+                    checked={emailProvider === 'brevo'}
+                    onChange={() => setEmailProvider('brevo')}
+                    className="w-4 h-4 rounded-full border border-border text-accent focus:ring-accent accent-accent"
+                  />
+                  Brevo
+                </label>
+                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="emailProvider"
+                    value="resend"
+                    checked={emailProvider === 'resend'}
+                    onChange={() => setEmailProvider('resend')}
+                    className="w-4 h-4 rounded-full border border-border text-accent focus:ring-accent accent-accent"
+                  />
+                  Resend
+                </label>
+              </div>
+            </div>
+
             <InputField label="Sender Name" value={senderName} onChange={setSenderName} placeholder="e.g. SoulSync" />
-            <InputField label="Sender Email" value={senderEmail} onChange={setSenderEmail} placeholder="e.g. hello@soulsync.com" helper="Must be verified in your Brevo account." />
+            <InputField
+              label="Sender Email"
+              value={senderEmail}
+              onChange={setSenderEmail}
+              placeholder="e.g. hello@soulsync.com"
+              helper={
+                emailProvider === 'brevo'
+                  ? "Must be verified in your Brevo account."
+                  : "Must be verified in your Resend account. If you use a free public domain (e.g. @gmail.com), it will automatically fallback to onboarding@resend.dev to ensure delivery."
+              }
+            />
           </div>
 
           {/* Configuration summary */}
@@ -677,6 +719,10 @@ export default function SetupView({ existingSettings, onComplete }) {
               <div className="bg-surface border border-border rounded-lg px-3 py-2.5">
                 <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Product</p>
                 <p className="text-sm font-medium text-text-primary mt-0.5">{productName || '—'}</p>
+              </div>
+              <div className="bg-surface border border-border rounded-lg px-3 py-2.5 col-span-2">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider">Email Provider</p>
+                <p className="text-sm font-medium text-text-primary mt-0.5 capitalize">{emailProvider}</p>
               </div>
             </div>
           </div>

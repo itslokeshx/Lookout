@@ -38,6 +38,7 @@ class LookOutSettings(BaseModel):
     extra_fields: list[str] = Field(default_factory=list)
     sender_name: str = ""
     sender_email: str = ""
+    email_provider: str = "brevo"
     enrichment: JoinConfig | None = None
     product_name: str = ""
     setup_complete: bool = False
