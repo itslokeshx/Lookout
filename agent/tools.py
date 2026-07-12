@@ -193,6 +193,34 @@ def find_users(
     return f"Successfully found {len(serialized_users)} users matching the criteria."
 
 
+_verified_senders_cache = None
+
+def clear_verified_senders_cache():
+    global _verified_senders_cache
+    _verified_senders_cache = None
+
+def _is_brevo_sender_verified(sender_email: str) -> bool:
+    global _verified_senders_cache
+    if _verified_senders_cache is not None:
+        return sender_email.lower() in _verified_senders_cache
+
+    from agent.config import BREVO_API_KEY
+    if not BREVO_API_KEY:
+        return False
+
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key["api-key"] = BREVO_API_KEY
+    
+    try:
+        api_instance = sib_api_v3_sdk.SendersApi(sib_api_v3_sdk.ApiClient(configuration))
+        api_response = api_instance.get_senders()
+        senders = getattr(api_response, "senders", []) or []
+        _verified_senders_cache = {s.email.lower() for s in senders if s.active}
+        return sender_email.lower() in _verified_senders_cache
+    except Exception:
+        return True
+
+
 def _send_email(receiver: str, subject: str, body: str) -> str:
     import time as _time
 
@@ -239,6 +267,11 @@ def _send_email(receiver: str, subject: str, body: str) -> str:
         from agent.config import BREVO_API_KEY
         if not BREVO_API_KEY:
             return "Failed: BREVO_API_KEY environment variable is not set."
+
+        # Verify sender first to avoid silent drops
+        if not _is_brevo_sender_verified(settings.sender_email):
+            return f"Failed: Sender email '{settings.sender_email}' is not configured or verified in Brevo."
+
         configuration = sib_api_v3_sdk.Configuration()
         configuration.api_key["api-key"] = BREVO_API_KEY
 

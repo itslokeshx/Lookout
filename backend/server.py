@@ -252,6 +252,9 @@ async def approve_dispatch_endpoint(req: ApproveDispatchRequest):
     if not dispatch:
         raise HTTPException(status_code=404, detail="Dispatch not found")
 
+    from agent.tools import clear_verified_senders_cache
+    clear_verified_senders_cache()
+
     users = dispatch["users"]
     template = dispatch["template"]
 
