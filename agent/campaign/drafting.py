@@ -22,7 +22,11 @@ Available placeholders (use ONLY these, nothing else):
 Write ONE email template using only the placeholders listed above.
 Sign off as "The {product} Team". Keep body under 100 words.
 Use at most 4 emojis total across subject and body.
-You must also explain your reasoning for the template in the 'reason' field.
+
+Formatting Guidelines:
+- If the user requests a button, download button, call to action (CTA), or link, format it as a standalone Markdown link on its own line: `[Button Text](https://url...)`. The system will automatically style any standalone Markdown link on its own line as a beautiful button.
+- Do NOT output raw URLs in the text; always format them as Markdown links.
+- You must also explain your reasoning for the template in the 'reason' field.
 """
     return template_llm.invoke(prompt)
 
@@ -93,7 +97,14 @@ def to_html(draft: EmailDraft) -> str:
             body_parts.append('<div style="height:10px;"></div>')
             continue
 
-        if link_match and stripped == link_match.group(0):
+        # Check if the line consists entirely of a markdown link (with optional trailing punctuation/spaces)
+        is_standalone_link = False
+        if link_match:
+            cleaned_stripped = re.sub(r'[.\s!?:;]+$', '', stripped)
+            if cleaned_stripped == link_match.group(0):
+                is_standalone_link = True
+
+        if is_standalone_link:
             link_text = link_match.group(1)
             link_url = link_match.group(2)
             body_parts.append(
@@ -106,6 +117,49 @@ def to_html(draft: EmailDraft) -> str:
                 f'{link_text}</a></td></tr></table>'
             )
             continue
+
+        # Check if the line consists entirely of a raw URL (with optional trailing punctuation/spaces)
+        raw_url_match = re.match(r'^(https?://[^\s()]+)[.\s!?:;]*$', stripped)
+        if raw_url_match:
+            link_url = raw_url_match.group(1)
+            link_text = "Download" if link_url.lower().endswith(('.apk', '.exe', '.zip', '.dmg', '.pdf')) else "Visit Link"
+            body_parts.append(
+                '<table role="presentation" cellpadding="0" cellspacing="0" '
+                'style="margin:24px auto;"><tr><td align="center" '
+                'style="border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#a78bfa);">'
+                f'<a href="{link_url}" target="_blank" '
+                'style="display:inline-block;padding:14px 36px;font-size:16px;font-weight:700;'
+                'color:#ffffff;text-decoration:none;border-radius:10px;letter-spacing:0.3px;">'
+                f'{link_text}</a></td></tr></table>'
+            )
+            continue
+
+        # Check if the line ends with a raw URL preceded by some text (e.g. "Grab it here: https://...")
+        # We split it into a paragraph for the prefix and a standalone button for the URL.
+        split_url_match = re.match(r'^(.+?)(?::\s*|,\s*|-\s+|\s+)(https?://[^\s()]+)[.\s!?:;]*$', stripped)
+        if split_url_match:
+            prefix_text = split_url_match.group(1).strip()
+            link_url = split_url_match.group(2)
+            
+            # Only perform the split if the prefix is not a URL itself
+            if not prefix_text.startswith("http://") and not prefix_text.startswith("https://"):
+                # Append the prefix text as a paragraph first
+                body_parts.append(
+                    f'<p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#e2e8f0;">{prefix_text}:</p>'
+                )
+                
+                # Append the URL as a standalone button
+                link_text = "Download" if link_url.lower().endswith(('.apk', '.exe', '.zip', '.dmg', '.pdf')) else "Visit Link"
+                body_parts.append(
+                    '<table role="presentation" cellpadding="0" cellspacing="0" '
+                    'style="margin:24px auto;"><tr><td align="center" '
+                    'style="border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#a78bfa);">'
+                    f'<a href="{link_url}" target="_blank" '
+                    'style="display:inline-block;padding:14px 36px;font-size:16px;font-weight:700;'
+                    'color:#ffffff;text-decoration:none;border-radius:10px;letter-spacing:0.3px;">'
+                    f'{link_text}</a></td></tr></table>'
+                )
+                continue
 
         processed = stripped
         if link_match:
