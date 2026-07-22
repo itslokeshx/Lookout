@@ -208,8 +208,13 @@ Similarly, if you hit Brevo's daily free sending limit, you can update your `BRE
 **3. Run**
 
 ```bash
-.venv/bin/uvicorn backend.server:app --reload --port 8000   # terminal 1
-cd frontend && npm run dev                                    # terminal 2
+npm run dev
+```
+
+Or run them individually:
+```bash
+npm run dev:backend   # FastAPI backend (port 8000)
+npm run dev:frontend  # React frontend (port 5173)
 ```
 
 Open `http://localhost:5173` — the setup wizard runs automatically on first launch and walks you through connecting your database.
