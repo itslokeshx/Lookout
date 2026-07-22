@@ -223,12 +223,12 @@ Open `http://localhost:5173` — the setup wizard runs automatically on first la
 
 ## Benchmarks
 
-Tested against a real SoulSync production dataset — 101 Gmail users, one campaign prompt.
+Tested against a real SoulSync production dataset — 187 users, one campaign prompt.
 
 | Metric | Result |
 |---|---|
-| Users matched | 101 |
-| Dispatch time | 94.75s (~0.93s/email) |
+| Users matched | 187 |
+| Dispatch time | 143.69s (~0.77s/email) |
 | Failed sends | 0 |
 | Writes during targeting | 0 |
 
