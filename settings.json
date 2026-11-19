@@ -5,23 +5,34 @@
     "email": "email",
     "name": "name",
     "joined_date": "createdAt",
-    "last_active": "updatedAt"
+    "last_active": "lastTasteUpdate"
   },
   "metrics": [
     {
       "field": "totalListeningTime",
       "label": "Total Listening Time",
       "unit": "seconds"
+    },
+    {
+      "field": "tasteWeightTotal",
+      "label": "Taste Weight Total",
+      "unit": "count"
+    },
+    {
+      "field": "updatedAt",
+      "label": "last active",
+      "unit": ""
     }
   ],
   "extra_fields": [
     "totalListeningTime",
+    "tasteWeightTotal",
     "authProvider",
     "onboardingComplete",
     "isEmailVerified",
-    "preferences.languages",
-    "preferences.eras",
-    "preferences.moods"
+    "lastSeenWhatsNewVersion",
+    "preferences",
+    "updatedAt"
   ],
   "sender_name": "Soulsync",
   "sender_email": "soulsyncplatform@gmail.com",
